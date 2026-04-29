@@ -1,0 +1,611 @@
+<div class="dashboard-container" [class.dashboard-container--with-rail]="showMetricsSection" *ngIf="metrics">
+  <div class="dashboard-header">
+    <div class="dashboard-heading">
+      <div class="dashboard-title-row">
+        <h2>Agent Sentiment Monitor</h2>
+        <span class="dashboard-live-pill">LIVE</span>
+      </div>
+    </div>
+    <div class="dashboard-header-actions">
+      <div class="threshold-summary">
+        <span
+          class="threshold-pill threshold-pill--warning"
+          [title]="getThresholdTooltip('bad')"
+          aria-label="Bad threshold information">
+          Bad Threshold ≤ {{ formatScore(riskThresholdBad) }}
+        </span>
+        <span
+          class="threshold-pill threshold-pill--danger"
+          [title]="getThresholdTooltip('critical')"
+          aria-label="Critical threshold information">
+          Critical Threshold ≤ {{ formatScore(riskThresholdCritical) }}
+        </span>
+      </div><button class="btn-refresh" (click)="refreshMetrics()" [disabled]="loading">
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      <span class="monitor-updated">Updated {{ metrics.lastUpdated | date: 'mediumTime' }}</span>
+      
+    </div>
+  </div>
+
+  <div
+    class="metrics-grid"
+    [class.metrics-grid--align-right]="alignMetricsSectionRight"
+    *ngIf="showMetricsSection">
+    <div class="metric-card metric-card--primary">
+      <div class="metric-content">
+        <div class="metric-heading">
+          <div class="metric-label">Total Sessions</div>
+          <div class="metric-subtext">All-time total</div>
+        </div>
+        <button
+          type="button"
+          class="metric-main-button"
+          [class.metric-main-button--active]="isMetricFilterActive('total')"
+          (click)="selectMetricFilter('total')"
+        >
+          <div class="metric-value">{{ metrics.totalAnalyses }}</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="metric-card metric-card--success">
+      <div class="metric-content">
+        <div class="metric-heading">
+          <div class="metric-label">Positive</div>
+          <div class="metric-subtext">{{ getSentimentPercentage(metrics.positiveCount, metrics.totalAnalyses) }}% of total</div>
+        </div>
+        <button
+          type="button"
+          class="metric-main-button"
+          [class.metric-main-button--active]="isMetricFilterActive('positive')"
+          (click)="selectMetricFilter('positive')"
+        >
+          <div class="metric-value">{{ metrics.positiveCount }}</div>
+        </button>
+        <div class="metric-progress">
+          <div class="progress-bar">
+            <div class="progress" [style.width.%]="getSentimentPercentage(metrics.positiveCount, metrics.totalAnalyses)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card metric-card--danger">
+      <div class="metric-content">
+        <div class="metric-heading">
+          <div class="metric-label">At Risk</div>
+          <div class="metric-subtext">{{ getSentimentPercentage(metrics.atRiskCount, metrics.totalAnalyses) }}% of total</div>
+        </div>
+        <button
+          type="button"
+          class="metric-main-button"
+          [class.metric-main-button--active]="isMetricFilterActive('at-risk')"
+          (click)="selectMetricFilter('at-risk')"
+        >
+          <div class="metric-value">{{ metrics.atRiskCount }}</div>
+        </button>
+        <div class="metric-progress">
+          <div class="progress-bar">
+            <div class="progress" [style.width.%]="getSentimentPercentage(metrics.atRiskCount, metrics.totalAnalyses)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card metric-card--warning">
+      <div class="metric-content">
+        <div class="metric-heading">
+          <div class="metric-label">Neutral</div>
+          <div class="metric-subtext">{{ getSentimentPercentage(metrics.neutralCount, metrics.totalAnalyses) }}% of total</div>
+        </div>
+        <button
+          type="button"
+          class="metric-main-button"
+          [class.metric-main-button--active]="isMetricFilterActive('neutral')"
+          (click)="selectMetricFilter('neutral')"
+        >
+          <div class="metric-value">{{ metrics.neutralCount }}</div>
+        </button>
+        <div class="metric-progress">
+          <div class="progress-bar">
+            <div class="progress" [style.width.%]="getSentimentPercentage(metrics.neutralCount, metrics.totalAnalyses)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sentimeter-card" *ngIf="metrics.totalAnalyses > 0">
+      <div class="sentimeter-header">
+        <h3>Sentimeter</h3>
+        <p>Customer sentiment overview</p>
+      </div>
+      <div class="sentimeter-body">
+        <div class="sentimeter-donut" [style.background]="getSentimentDistributionStyle()">
+          <div class="sentimeter-center">
+            <strong>{{ metrics.totalAnalyses }}</strong>
+            <span>Total</span>
+          </div>
+        </div>
+        <div class="sentimeter-legend">
+          <div class="sentimeter-item">
+            <span class="sentimeter-dot sentimeter-dot--positive"></span>
+            <span class="sentimeter-name">Positive</span>
+            <span class="sentimeter-value">{{ getSentimentPercentage(metrics.positiveCount, metrics.totalAnalyses) }}%</span>
+          </div>
+          <div class="sentimeter-item">
+            <span class="sentimeter-dot sentimeter-dot--neutral"></span>
+            <span class="sentimeter-name">Neutral</span>
+            <span class="sentimeter-value">{{ getSentimentPercentage(metrics.neutralCount, metrics.totalAnalyses) }}%</span>
+          </div>
+          <div class="sentimeter-item">
+            <span class="sentimeter-dot sentimeter-dot--warning"></span>
+            <span class="sentimeter-name">At Risk</span>
+            <span class="sentimeter-value">{{ getSentimentPercentage(metrics.atRiskCount, metrics.totalAnalyses) }}%</span>
+          </div>
+          <!-- <div class="sentimeter-item">
+            <span class="sentimeter-dot sentimeter-dot--negative"></span>
+            <span class="sentimeter-name">Negative</span>
+            <span class="sentimeter-value">{{ getSentimentPercentage(metrics.negativeCount, metrics.totalAnalyses) }}%</span>
+          </div> -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="agent-monitor-section" *ngIf="showAgentMonitorSection">
+    <div class="filter-bar">
+      <label class="filter-field">
+        <span class="filter-label">Agent Name</span>
+        <input
+          type="text"
+          class="filter-input"
+          [value]="filters.agentName"
+          (input)="onFilterChange('agentName', $any($event.target).value)"
+          placeholder="Filter by agent name"
+        >
+      </label>
+      <label class="filter-field">
+        <span class="filter-label">Team ID</span>
+        <select
+          class="filter-input"
+          [value]="filters.teamId"
+          (change)="onFilterChange('teamId', $any($event.target).value)"
+        >
+          <option value="">All team IDs</option>
+          <option *ngFor="let team of teamOptions" [value]="team">{{ team }}</option>
+        </select>
+      </label>
+      <label class="filter-field">
+        <span class="filter-label">Session ID</span>
+        <input
+          type="text"
+          class="filter-input"
+          [value]="filters.sessionId"
+          (input)="onFilterChange('sessionId', $any($event.target).value)"
+          placeholder="Filter by session ID"
+        >
+      </label>
+      <label class="filter-field">
+        <span class="filter-label">Sentiment Context</span>
+        <select
+          class="filter-input"
+          [value]="filters.sentiment"
+          (change)="onFilterChange('sentiment', $any($event.target).value)"
+        >
+          <option value="">All sentiments</option>
+          <option value="positive">Positive</option>
+          <option value="neutral">Neutral</option>
+          <option value="negative">Negative</option>
+        </select>
+      </label>
+      <button type="button" class="btn-clear-filters" (click)="clearFilters()">Clear</button>
+    </div>
+
+    <div class="agent-table-wrapper">
+      <div class="agent-table-header">
+        <div class="header-cell header-agent">Agent name (Agent Id)</div>
+        <div class="header-cell">Ongoing</div>
+        <div class="header-cell">Status</div>
+        <div class="header-cell header-cell--last-sentiment">Last sentiment</div>
+        <div class="header-cell">Last score</div>
+        <div class="header-cell">At-risk</div>
+      </div>
+
+      <div class="agent-table-body">
+        <div class="agent-empty-state" *ngIf="agents.length === 0">
+          <div class="agent-empty-illustration" aria-hidden="true">
+            <svg viewBox="0 0 220 150" role="img">
+              <defs>
+                <linearGradient id="emptyCardGradient" x1="26" y1="16" x2="192" y2="132" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#eef7ff"/>
+                  <stop offset="1" stop-color="#f7f0ff"/>
+                </linearGradient>
+                <linearGradient id="emptyLineGradient" x1="63" y1="62" x2="156" y2="87" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#14b8a6"/>
+                  <stop offset="1" stop-color="#6366f1"/>
+                </linearGradient>
+              </defs>
+              <rect x="22" y="18" width="176" height="112" rx="18" fill="url(#emptyCardGradient)"/>
+              <rect x="40" y="38" width="140" height="72" rx="14" fill="#ffffff" stroke="#dbe7f5" stroke-width="2"/>
+              <path d="M58 86 C72 70 86 91 101 73 C117 53 130 83 147 60 C154 51 161 47 170 52" fill="none" stroke="url(#emptyLineGradient)" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="58" cy="86" r="6" fill="#14b8a6"/>
+              <circle cx="101" cy="73" r="6" fill="#38bdf8"/>
+              <circle cx="147" cy="60" r="6" fill="#6366f1"/>
+              <rect x="58" y="100" width="94" height="5" rx="2.5" fill="#d8e4f2"/>
+              <rect x="58" y="50" width="44" height="6" rx="3" fill="#cbd9ea"/>
+              <circle cx="176" cy="34" r="18" fill="#ffffff" stroke="#dbe7f5" stroke-width="2"/>
+              <path d="M168 34 L174 40 L185 28" fill="none" stroke="#14b8a6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3>No sentiment data yet</h3>
+          <p>Live agent sessions will appear here as soon as the monitor receives data. If you are filtering the table, try clearing the filters to see all sessions.</p>
+        </div>
+        <div *ngFor="let agent of agents" class="agent-row-wrapper">
+          <button
+            type="button"
+            class="agent-row"
+            [class.expanded]="expandedAgentId === agent.id"
+            (click)="toggleAgentDetails(agent)"
+          >
+            <div class="cell cell-agent">
+              <span class="expand-icon">{{ expandedAgentId === agent.id ? 'v' : '>' }}</span>
+              <div class="agent-info">
+                <div class="agent-name">{{ getAgentLabel(agent) }}</div>
+                <div class="agent-id">{{ agent.sessions.length }} session{{ agent.sessions.length === 1 ? '' : 's' }}</div>
+              </div>
+            </div>
+            <div class="cell">
+              <span class="badge">{{ agent.ongoing }}</span>
+            </div>
+            <div class="cell">
+              <span class="badge" [class]="getStatusClass(agent.status)">{{ formatStatusLabel(agent.status) }}</span>
+            </div>
+            <div class="cell">
+              <span class="sentiment-badge" [class]="'sentiment-' + getSentimentTone(agent.liveInsights.currentSentiment)">
+                {{ formatSentimentLabel(getLatestSessionSentiment(agent)) }}
+              </span>
+            </div>
+            <div class="cell">
+              <span class="session-score">{{ formatScore(agent.liveInsights.currentSentiment) }}</span>
+            </div>
+            <div class="cell">
+              <span class="risk-badge" [class]="getRiskClass(agent.atRisk)">
+                {{ getRiskLabel(agent.atRisk) }}
+              </span>
+            </div>
+          </button>
+
+          <div class="agent-details" *ngIf="expandedAgentId === agent.id">
+            <div class="details-content">
+              <div class="detail-section">
+                <div class="detail-header">
+                  <span class="detail-badge detail-badge--live">Live feed</span>
+                  <span class="detail-badge detail-badge--positive">{{ agent.liveInsights.currentSentiment > 0 ? 'Positive' : 'Negative' }} trend</span>
+                </div>
+
+                <div class="session-list">
+                  <div class="session-table-header">
+                    <div class="session-table-cell">Session ID</div>
+                    <div class="session-table-cell">Status</div>
+                    <div class="session-table-cell session-table-cell--sentiment">sentiment</div>
+                    <div class="session-table-cell">Score</div>
+                    <div class="session-table-cell">Risk</div>
+                    <div class="session-table-cell session-table-cell--action">Actions</div>
+                    <div class="session-table-cell session-table-cell--action">Review</div>
+                  </div>
+                  <div class="session-entry" *ngFor="let session of agent.sessions">
+                    <div class="session-item">
+                      <div
+                        class="session-main"
+                        [class.session-main--active]="activeInteractionSessionId === session.sessionId"
+                        (click)="toggleInteractionSession(session)"
+                      >
+                        <div class="session-table-cell">
+                          <span class="session-id">{{ session.sessionId }}</span>
+                        </div>
+                        <div class="session-table-cell">
+                          <span class="detail-badge" [class]="getStatusClass(session.status)">{{ formatStatusLabel(session.status) }}</span>
+                        </div>
+                        <div class="session-table-cell">
+                          <span class="sentiment-badge" [class]="'sentiment-' + getSentimentTone(session.score)">
+                            {{ formatSentimentLabel(session.sentiment) }}
+                          </span>
+                        </div>
+                        <div class="session-table-cell">
+                          <span class="session-score">{{ formatScore(session.score) }}</span>
+                        </div>
+                        <div class="session-table-cell">
+                          <span class="risk-badge" [class]="getRiskClass(session.atRisk)">
+                            {{ getRiskLabel(session.atRisk) }}
+                          </span>
+                        </div>
+                        <div class="annotation-actions session-table-cell session-table-cell--action">
+                          <div class="session-monitor-actions">
+                            <button
+                              type="button"
+                              class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon"
+                              [disabled]="session.monitorActionLoading"
+                              [attr.aria-label]="getMonitorActionLabel(session, 'silent')"
+                              [title]="getMonitorActionLabel(session, 'silent')"
+                              (click)="launchSessionMonitor(session, 'silent'); $event.stopPropagation()"
+                            >
+                              <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M1.5 8s2.3-4 6.5-4 6.5 4 6.5 4-2.3 4-6.5 4-6.5-4-6.5-4Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                                <circle cx="8" cy="8" r="2.1" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon"
+                              [disabled]="session.monitorActionLoading"
+                              [attr.aria-label]="getMonitorActionLabel(session, 'whisper')"
+                              [title]="getMonitorActionLabel(session, 'whisper')"
+                              (click)="launchSessionMonitor(session, 'whisper'); $event.stopPropagation()"
+                            >
+                              <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M8 2.2a2 2 0 0 1 2 2v3.6a2 2 0 1 1-4 0V4.2a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                                <path d="M4.2 7.8a3.8 3.8 0 1 0 7.6 0" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                <path d="M8 11.6v2.2M5.8 13.8h4.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon annotation-btn--monitor-strong"
+                              [disabled]="session.monitorActionLoading"
+                              [attr.aria-label]="getMonitorActionLabel(session, 'barge-in')"
+                              [title]="getMonitorActionLabel(session, 'barge-in')"
+                              (click)="launchSessionMonitor(session, 'barge-in'); $event.stopPropagation()"
+                            >
+                              <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M8.8 1.8 4.4 8h2.8l-.6 6.2L11.6 8H8.8l0-6.2Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="annotation-actions session-table-cell session-table-cell--action">
+                          <span
+                            *ngIf="hasExistingReview(session)"
+                            class="annotation-badge"
+                            [class]="getAnnotationBadgeClass(session.latestAnnotationType)">
+                            <span class="annotation-badge-icon">{{ getAnnotationIcon(session.latestAnnotationType) }}</span>
+                          </span>
+                          <button
+                            type="button"
+                            class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon"
+                            aria-label="Review call"
+                            title="Review call"
+                            (click)="openAnnotationModal(agent, session); $event.stopPropagation()"
+                          >
+                            <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
+                              <path d="M5 2.5h6a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 11 13.5H5A1.5 1.5 0 0 1 3.5 12V4A1.5 1.5 0 0 1 5 2.5Z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                              <path d="M6.2 1.8h3.6M6 6h4M6 8.5h4M6 11h2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="interaction-details" *ngIf="activeInteractionSessionId === session.sessionId">
+                      <div class="session-monitor-note" *ngIf="session.monitorActionError">
+                        {{ session.monitorActionError }}
+                      </div>
+                      <div class="interaction-grid">
+                        <div class="interaction-card">
+                          <h4>Live Chart</h4>
+                          <customer-sentiment
+                            [timeline]="session.timeline || []"
+                            [loading]="session.timelineLoading === true"
+                            [badThreshold]="riskThresholdBad"
+                            [criticalThreshold]="riskThresholdCritical"
+                          ></customer-sentiment>
+                        </div>
+
+                        <div class="interaction-card">
+                          <div class="transcript-header">
+                            <div class="transcript-title">
+                              <span class="transcript-title-icon">o</span>
+                              <h4>Live Transcripts</h4>
+                            </div>
+                            <span class="transcript-live-indicator">LIVE</span>
+                          </div>
+                          <div class="transcript-panel" *ngIf="session.timeline?.length; else inlineTimelineFallback">
+                            <div
+                              class="transcript-message"
+                              [class.transcript-message--agent]="item.speaker === 'agent'"
+                              [class.transcript-message--customer]="item.speaker === 'customer'"
+                              *ngFor="let item of session.timeline">
+                              <div
+                                class="transcript-avatar"
+                                [class.transcript-avatar--agent]="item.speaker === 'agent'"
+                                [class.transcript-avatar--customer]="item.speaker === 'customer'">
+                                {{ item.speaker === 'agent' ? getAgentInitials(agent.name || 'Agent').charAt(0) : 'C' }}
+                              </div>
+                              <div class="transcript-message-content">
+                                <div class="transcript-speaker">
+                                  {{ item.speaker === 'agent' ? (agent.name || 'Agent') : 'Customer' }}
+                                </div>
+                                <div class="transcript-bubble">
+                                  <p class="transcript-text">{{ item.transcript || 'No transcript captured.' }}</p>
+                                  <div class="transcript-meta-row">
+                                    <span class="transcript-time">{{ item.datetime ? (item.datetime | date: 'shortTime') : 'Time unavailable' }}</span>
+                                    <span class="transcript-flag" *ngIf="item.alertReason">{{ item.alertReason }}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <ng-template #inlineTimelineFallback>
+                            <div class="annotation-audit annotation-audit--modal">
+                              <span class="annotation-state" *ngIf="session.timelineLoading">Loading interaction timeline...</span>
+                              <span class="annotation-meta" *ngIf="!session.timelineLoading">No transcript available for this interaction.</span>
+                            </div>
+                          </ng-template>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-section" *ngIf="showSummarySection">
+    <div class="summary-card">
+      <h3>Average Sentiment</h3>
+      <div class="summary-value" [ngClass]="'sentiment-' + getSentimentTone(metrics.averageSentiment)">
+        {{ formatScore(metrics.averageSentiment) }}
+      </div>
+      <p class="summary-description">Range: -1.0 (very negative) to 1.0 (very positive)</p>
+    </div>
+
+    <div class="summary-card">
+      <h3>Success Rate</h3>
+      <div class="summary-value" [ngClass]="'rate-' + getMetricClass('success', metrics.successRate)">
+        {{ metrics.successRate.toFixed(1) }}%
+      </div>
+      <p class="summary-description">Analysis completion success rate</p>
+    </div>
+
+    <div class="summary-card">
+      <h3>Last Updated</h3>
+      <div class="summary-value">{{ metrics.lastUpdated | date: 'short' }}</div>
+      <p class="summary-description">{{ metrics.lastUpdated | date: 'medium' }}</p>
+    </div>
+  </div>
+
+  <div class="chart-section" *ngIf="showSentimentDistributionSection">
+    <h2>Sentiment Distribution</h2>
+    <div class="distribution-chart">
+      <div class="chart-bar">
+        <div class="bar-label">Positive</div>
+        <div class="bar-container">
+          <div class="bar" [style.width.%]="getSentimentPercentage(metrics.positiveCount, metrics.totalAnalyses)" style="background: #27ae60;"></div>
+        </div>
+        <div class="bar-value">{{ metrics.positiveCount }}</div>
+      </div>
+
+      <div class="chart-bar">
+        <div class="bar-label">Negative</div>
+        <div class="bar-container">
+          <div class="bar" [style.width.%]="getSentimentPercentage(metrics.negativeCount, metrics.totalAnalyses)" style="background: #e74c3c;"></div>
+        </div>
+        <div class="bar-value">{{ metrics.negativeCount }}</div>
+      </div>
+
+      <div class="chart-bar">
+        <div class="bar-label">Neutral</div>
+        <div class="bar-container">
+          <div class="bar" [style.width.%]="getSentimentPercentage(metrics.neutralCount, metrics.totalAnalyses)" style="background: #f39c12;"></div>
+        </div>
+        <div class="bar-value">{{ metrics.neutralCount }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-stats" *ngIf="showQuickStatsSection">
+    <div class="stat">
+      <span class="stat-label">Avg per Category</span>
+      <span class="stat-value">{{ (metrics.totalAnalyses / 3 | number: '1.0-0') }}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Positive Ratio</span>
+      <span class="stat-value">{{ ((metrics.positiveCount / metrics.totalAnalyses) * 100 | number: '1.1-1') }}%</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Analysis Focus</span>
+      <span class="stat-value">
+        {{ metrics.positiveCount > metrics.negativeCount ? 'Positive ↑' : metrics.negativeCount > metrics.positiveCount ? 'Negative ↑' : 'Balanced' }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="annotation-modal-backdrop" *ngIf="annotationModalSession" (click)="closeAnnotationModal()">
+  <div class="annotation-modal" (click)="$event.stopPropagation()">
+    <div class="annotation-modal-header">
+      <div>
+        <h3>Review Call Annotation</h3>
+        <p>{{ annotationModalAgentName }} - {{ annotationModalSession.sessionId }}</p>
+      </div>
+      <button type="button" class="annotation-modal-close" (click)="closeAnnotationModal()">x</button>
+    </div>
+
+    <div class="annotation-modal-body" *ngIf="annotationModalSession as session">
+      <div class="annotation-modal-section">
+        <h4>Team Leader Feedback</h4>
+        <label class="annotation-comment-field" for="annotation-comment">
+          <span class="annotation-comment-label">Comment</span>
+          <textarea
+            id="annotation-comment"
+            class="annotation-comment-input"
+            rows="3"
+            maxlength="500"
+            [value]="annotationDraftComment"
+            (input)="annotationDraftComment = $any($event.target).value; annotationCommentError = ''"
+            placeholder="Add your review comment before submitting feedback"></textarea>
+        </label>
+        <div class="annotation-comment-meta">
+          <span>{{ annotationDraftComment.trim().length }}/500</span>
+          <span class="annotation-comment-error" *ngIf="annotationCommentError">{{ annotationCommentError }}</span>
+        </div>
+        <div class="annotation-actions annotation-actions--modal">
+          <button
+            type="button"
+            class="annotation-btn annotation-btn--up annotation-btn--icon-only"
+            [class.annotation-btn--active]="isAnnotationSelected(session, 'thumbs_up')"
+            aria-label="Thumbs up"
+            title="Thumbs up"
+            [disabled]="session.annotationSubmitting"
+            (click)="annotateSession(session, 'thumbs_up')"
+          >
+            👍
+          </button>
+          <button
+            type="button"
+            class="annotation-btn annotation-btn--down annotation-btn--icon-only"
+            [class.annotation-btn--active]="isAnnotationSelected(session, 'thumbs_down')"
+            aria-label="Thumbs down"
+            title="Thumbs down"
+            [disabled]="session.annotationSubmitting"
+            (click)="annotateSession(session, 'thumbs_down')"
+          >
+            👎
+          </button>
+        </div>
+      </div>
+
+      <div class="annotation-modal-section" *ngIf="session.annotationHistory?.length">
+        <h4>Review History</h4>
+        <div class="annotation-history-list">
+          <div class="annotation-history-item" *ngFor="let entry of session.annotationHistory">
+            <div class="annotation-history-top">
+              <span class="annotation-badge" [class]="getAnnotationBadgeClass(entry.annotationType)">
+                <span class="annotation-badge-icon">{{ getAnnotationIcon(entry.annotationType) }}</span>
+                {{ getAnnotationLabel(entry.annotationType) }}
+              </span>
+              <span class="annotation-history-level">{{ getAnnotationLevelLabel(entry.level) }}</span>
+              <span class="annotation-history-time">{{ entry.createdAt | date: 'short' }}</span>
+            </div>
+            <div class="annotation-history-meta">
+              <span>Reviewer: {{ entry.supervisorId || 'Supervisor' }}</span>
+              <span *ngIf="entry.segmentId">Segment: {{ entry.segmentId }}</span>
+              <span *ngIf="entry.annotationId">ID: {{ entry.annotationId }}</span>
+            </div>
+            <p class="annotation-history-comment" *ngIf="entry.comment">{{ entry.comment }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading && !metrics">
+  <div class="spinner"></div>
+  <p>Loading dashboard metrics...</p>
+</div>

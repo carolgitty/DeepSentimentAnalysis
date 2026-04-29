@@ -1,0 +1,46 @@
+{
+  "app": {
+    "name": "Text Analyzer UI",
+    "version": "1.0.0",
+    "port": 4600
+  },
+  "api": {
+    "baseUrl": "http://localhost:5000/api/v1/sentiment/",
+    "timeout": 30000,
+    "retryAttempts": 3
+  },
+  "sentiment": {
+    "thresholds": {
+      "neutral": 0.0,
+      "bad": -0.50,
+      "critical": -0.75
+    },
+    "updateInterval": 50000
+  },
+  "dashboard": {
+    "refreshInterval": 5000,
+    "maxAgents": 100,
+    "pageSize": 20,
+    "useDummy": false,
+    "showMetricsSection": true,
+    "alignMetricsSectionRight": true,
+    "showAgentMonitorSection": true,
+    "showSummarySection": false,
+    "showSentimentDistributionSection": false,
+    "showQuickStatsSection": false
+  },
+  "wordCloud": {
+    "useDummy": false,
+    "refreshInterval": 50000
+  },
+  "features": {
+    "liveTracking": true,
+    "analytics": true,
+    "exportData": true
+  },
+  "logging": {
+    "level": "info",
+    "enableConsole": true,
+    "enableFile": false
+  }
+}

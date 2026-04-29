@@ -1,0 +1,22 @@
+<nav class="main-nav">
+  <div class="nav-container">
+    <div class="nav-brand">
+      <h1 class="brand-text">Text Analyzer UI</h1>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item" [class.active]="isActive('dashboard')">
+        <button class="nav-link" (click)="navigate('dashboard')">
+          <span class="nav-icon">DB</span>
+          <span class="nav-text">Dashboard</span>
+        </button>
+      </li>
+      <li class="nav-item" [class.active]="isActive('word-intelligence')">
+        <button class="nav-link" (click)="navigate('word-intelligence')">
+          <span class="nav-icon">WC</span>
+          <span class="nav-text">Word Intelligence</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+</nav>

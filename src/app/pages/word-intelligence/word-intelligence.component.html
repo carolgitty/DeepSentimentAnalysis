@@ -1,0 +1,211 @@
+﻿<div class="word-page">
+  <section class="status-strip" *ngIf="pageMessage || pageError">
+    <div class="status-message status-message--success" *ngIf="pageMessage">{{ pageMessage }}</div>
+    <div class="status-message status-message--error" *ngIf="pageError">{{ pageError }}</div>
+  </section>
+
+  <section class="panel panel--excel">
+    <div class="panel-header panel-header--excel">
+      <div>
+        <h2>Trending Topics Dashboard</h2>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="btn btn-secondary" (click)="loadDashboard()" [disabled]="loading">
+          {{ loading ? 'Refreshing...' : 'Refresh Data' }}
+        </button>
+        <button type="button" class="btn btn-primary" (click)="triggerProcessor()" [disabled]="processorLoading">
+          {{ processorLoading ? 'Triggering...' : 'Trigger Processor' }}
+        </button>
+        <a class="btn btn-secondary" routerLink="manage-words">Manage Words</a>
+        <a class="btn btn-secondary" routerLink="manage-exclusion-words">Manage Exclusions</a>
+      </div>
+    </div>
+
+    <details class="filters-panel filters-panel--excel">
+      <summary>Filters</summary>
+
+      <div class="toolbar toolbar--compact toolbar--dense">
+        <label class="field field--wide">
+          <span>Search</span>
+          <input
+            [(ngModel)]="searchText"
+            (ngModelChange)="applyExcelFilters()"
+            placeholder="Filter intents or keywords" />
+        </label>
+        <label class="field">
+          <span>Source</span>
+          <select [(ngModel)]="cloudFilters.source" (ngModelChange)="applyExcelFilters()">
+            <option value="">All sources</option>
+            <option *ngFor="let option of sourceOptions" [value]="option">{{ option }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Team ID</span>
+          <select [(ngModel)]="cloudFilters.teamId" (ngModelChange)="applyExcelFilters()">
+            <option value="">All teams</option>
+            <option *ngFor="let teamId of teamIdOptions" [value]="teamId">{{ teamId }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Agent ID</span>
+          <select [(ngModel)]="cloudFilters.agentId" (ngModelChange)="applyExcelFilters()">
+            <option value="">All agents</option>
+            <option *ngFor="let agentId of agentIdOptions" [value]="agentId">{{ agentId }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Skill</span>
+          <select [(ngModel)]="cloudFilters.skill" (ngModelChange)="applyExcelFilters()">
+            <option value="">All skills</option>
+            <option
+              *ngFor="let skill of skillOptions"
+              [class.option--has-count]="skillHasCount(skill)"
+              [value]="skill">
+              {{ skill }}{{ skillHasCount(skill) ? ' *' : '' }}
+            </option>
+          </select>
+        </label>
+        <label class="field">
+          <span>From</span>
+          <input
+            type="datetime-local"
+            [(ngModel)]="cloudFilters.fromDateTime"
+            (ngModelChange)="applyExcelFilters()" />
+        </label>
+        <label class="field">
+          <span>To</span>
+          <input
+            type="datetime-local"
+            [(ngModel)]="cloudFilters.toDateTime"
+            (ngModelChange)="applyExcelFilters()" />
+        </label>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="clearExcelFilters()">
+          Clear
+        </button>
+      </div>
+    </details>
+
+    <div class="hierarchy-title">
+      <span>Main Intents</span>
+    </div>
+    <ng-container *ngIf="filteredExcelLevelOneGroups.length; else noExcelIntents">
+      <div class="product-card-grid">
+        <button
+          type="button"
+          class="product-card"
+          [class.product-card--active]="!selectedExcelLevelOne"
+          (click)="selectAllExcelLevelOne()">
+          <span class="product-card__icon product-card__icon--0">*</span>
+          <strong>All Intents ({{ getAllIntentTotalCount() }})</strong>
+        </button>
+        <button
+          type="button"
+          class="product-card"
+          *ngFor="let group of filteredExcelLevelOneGroups"
+          [class.product-card--active]="selectedExcelLevelOne === group"
+          (click)="selectExcelLevelOne(group)">
+          <span class="product-card__icon" [ngClass]="getLevelOneIconClass(group)">
+            {{ getLevelOneIcon(group) }}
+          </span>
+          <strong>{{ group }} ({{ getExcelLevelOneTotalCount(group) }})</strong>
+        </button>
+      </div>
+
+      <div class="hierarchy-title">
+        <span>Sub Intents</span>
+        <strong>Groups for <em>{{ selectedExcelLevelOne || 'All Intents' }}</em></strong>
+      </div>
+      <div class="intent-card-grid">
+        <button
+          type="button"
+          class="intent-card"
+          *ngFor="let item of filteredExcelIntents"
+          [class.intent-card--active]="selectedExcelIntent === item.key"
+          (click)="selectExcelIntent(item.key)">
+          <span class="intent-card__icon">o</span>
+          <strong>{{ item.intent }} ({{ getExcelIntentTotalCount(item) }})</strong>
+        </button>
+      </div>
+
+      <div class="hierarchy-title" *ngIf="selectedExcelIntent && selectedExcelSample as item">
+        <span>Keywords</span>
+        <strong>Words for <em>{{ item.intent }}</em></strong>
+      </div>
+      <div class="keyword-card" *ngIf="selectedExcelIntent && selectedExcelSample">
+        <button
+          type="button"
+          class="keyword-chip"
+          *ngFor="let keyword of visibleKeywordChips"
+          [class.keyword-chip--active]="isSelectedTopic(keyword)"
+          [class.keyword-chip--has-count]="getKeywordSessionCount(keyword) > 0"
+          (click)="loadSessionsForWord(keyword)">
+          <span class="keyword-chip__dot"></span>
+          {{ keyword }} ({{ getKeywordSessionCount(keyword) }})
+        </button>
+      </div>
+
+    </ng-container>
+
+    <ng-template #noExcelIntents>
+      <div class="empty-state">
+        No backend word groups match the current filters.
+      </div>
+    </ng-template>
+
+    <div class="session-detail" *ngIf="selectedTopicWord">
+      <div class="session-detail__header">
+        <h3>Related transcripts for {{ selectedTopicWord }}</h3>
+        <p>{{ sessionLoading ? 'Loading all sessions and transcripts...' : topicSessions.length + ' matching session(s)' }}</p>
+      </div>
+
+      <div class="session-table" *ngIf="!sessionLoading && topicSessions.length; else noTopicSessions">
+        <div class="session-table__row session-table__row--header">
+          <span>UCIN</span>
+          <span>Date and time of call</span>
+          <span>Agent name</span>
+          <span>Agent ID</span>
+          <span>Transcripts</span>
+        </div>
+
+        <ng-container *ngFor="let session of topicSessions">
+          <div class="session-table__row">
+            <span class="word-text">{{ session.ucid || session.sessionId || 'Unavailable' }}</span>
+            <span>{{ session.datetime ? (session.datetime | date: 'medium') : 'Time unavailable' }}</span>
+            <span>{{ session.agentName || 'Unknown' }}</span>
+            <span>{{ session.agentId || 'No ID' }}</span>
+            <span>
+              <button type="button" class="table-link table-link--button" (click)="toggleTranscript(session)">
+                {{ session.transcriptExpanded ? 'Hide transcript' : 'View transcript' }}
+              </button>
+            </span>
+          </div>
+
+          <div class="transcript-expanded" *ngIf="session.transcriptExpanded">
+            <span class="annotation-state" *ngIf="session.transcriptLoading">Loading transcript...</span>
+            <div class="transcript-expanded__list" *ngIf="!session.transcriptLoading && session.transcriptLines?.length; else noExpandedTranscript">
+              <div
+                class="transcript-expanded__line"
+                [class.transcript-expanded__line--agent]="line.speaker === 'agent'"
+                *ngFor="let line of session.transcriptLines">
+                <strong>{{ line.speaker || 'Unknown' }}</strong>
+                <p>{{ line.transcript || 'No transcript captured.' }}</p>
+                <span>{{ line.datetime ? (line.datetime | date: 'shortTime') : 'Time unavailable' }}</span>
+              </div>
+            </div>
+            <ng-template #noExpandedTranscript>
+              <div class="empty-state" *ngIf="!session.transcriptLoading">
+                No transcript lines available.
+              </div>
+            </ng-template>
+          </div>
+        </ng-container>
+      </div>
+
+      <ng-template #noTopicSessions>
+        <div class="empty-state" *ngIf="!sessionLoading">
+          No transcripts matched this keyword.
+        </div>
+      </ng-template>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,72 @@
+<div class="word-page">
+  <section class="status-strip" *ngIf="pageMessage || pageError">
+    <div class="status-message status-message--success" *ngIf="pageMessage">{{ pageMessage }}</div>
+    <div class="status-message status-message--error" *ngIf="pageError">{{ pageError }}</div>
+  </section>
+
+  <section class="panel panel--full">
+    <div class="panel-header">
+      <div>
+        <h2>Manage Exclusion Words</h2>
+        <p>Manage words that should be ignored by topic and keyword processing.</p>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="btn btn-secondary" routerLink="../">Back to Topics</button>
+        <button type="button" class="btn btn-secondary" routerLink="../manage-words">Manage Words</button>
+        <button type="button" class="btn btn-secondary" (click)="loadExclusionWords()" [disabled]="loading">
+          {{ loading ? 'Refreshing...' : 'Refresh Data' }}
+        </button>
+      </div>
+    </div>
+
+    <details class="filters-panel" open>
+      <summary>Filters and exclusion tools</summary>
+
+      <div class="toolbar toolbar--library">
+        <label class="field field--wide">
+          <span>Search</span>
+          <input [(ngModel)]="exclusionSearchText" placeholder="Filter exclusion words" />
+        </label>
+      </div>
+
+      <div class="add-card">
+        <h3>Add Exclusion Word</h3>
+        <div class="toolbar toolbar--dense">
+          <label class="field field--wide">
+            <span>Word</span>
+            <input [(ngModel)]="exclusionForm.word" placeholder="Enter a word or phrase to exclude" />
+          </label>
+          <button type="button" class="btn btn-primary" (click)="addExclusionWord()">Add Exclusion</button>
+        </div>
+      </div>
+    </details>
+
+    <div class="word-table exclusion-table" *ngIf="filteredExclusionWords.length; else noExclusionWords">
+      <div class="word-table__row exclusion-table__row word-table__row--header">
+        <span>Word</span>
+        <span>Actions</span>
+      </div>
+
+      <div
+        class="word-table__row exclusion-table__row"
+        *ngFor="let word of filteredExclusionWords; trackBy: trackExclusionWord">
+        <span class="word-text">{{ word.text || 'Unknown' }}</span>
+        <span class="action-row">
+          <button
+            type="button"
+            class="btn btn-danger btn-sm"
+            (click)="deleteExclusionWord(word)"
+            [disabled]="word.deleting">
+            {{ word.deleting ? 'Deleting...' : 'Delete' }}
+          </button>
+        </span>
+      </div>
+    </div>
+
+    <ng-template #noExclusionWords>
+      <div class="empty-state">
+        No exclusion words matched the current search.
+      </div>
+    </ng-template>
+  </section>
+</div>

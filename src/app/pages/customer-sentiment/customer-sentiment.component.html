@@ -1,0 +1,78 @@
+<div class="customer-sentiment-chart">
+  <div class="chart-title">
+    <span class="chart-title-icon">✣</span>
+    <h4>Customer Sentiment</h4>
+  </div>
+
+  <div class="chart-shell" *ngIf="hasChartData; else chartFallback">
+    <div class="chart-grid">
+      <div class="chart-canvas">
+        <div
+          class="chart-hover-tooltip"
+          *ngIf="hoveredPoint"
+          [style.left.%]="hoveredPoint.x"
+          [style.top.%]="hoveredPoint.y">
+          {{ hoveredPoint.value }}
+        </div>
+        <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="chart-svg">
+          <g *ngFor="let label of yAxisLabels">
+            <line x1="8" [attr.y1]="getGridY(label)" x2="88" [attr.y2]="getGridY(label)" class="chart-grid-line"></line>
+            <text x="4.5" [attr.y]="getGridY(label) + 1.2" class="chart-y-label">{{ label }}</text>
+          </g>
+
+          <g *ngFor="let slot of xAxisLabels; let i = index">
+            <line [attr.x1]="getGridX(i)" y1="8" [attr.x2]="getGridX(i)" y2="52" class="chart-grid-line"></line>
+            <text [attr.x]="getGridX(i)" y="57.5" class="chart-x-label">{{ slot }}</text>
+          </g>
+
+          <g *ngIf="shouldShowThreshold(badThreshold)">
+            <line x1="8" [attr.y1]="getGridY(badThreshold)" x2="88" [attr.y2]="getGridY(badThreshold)" class="chart-threshold-line chart-threshold-line--bad"></line>
+            <text x="87" [attr.y]="getGridY(badThreshold) - 0.8" class="chart-threshold-label chart-threshold-label--bad">
+              Bad {{ badThreshold.toFixed(2) }}
+            </text>
+          </g>
+
+          <g *ngIf="shouldShowThreshold(criticalThreshold)">
+            <line x1="8" [attr.y1]="getGridY(criticalThreshold)" x2="88" [attr.y2]="getGridY(criticalThreshold)" class="chart-threshold-line chart-threshold-line--critical"></line>
+            <text x="87" [attr.y]="getGridY(criticalThreshold) - 0.8" class="chart-threshold-label chart-threshold-label--critical">
+              Critical {{ criticalThreshold.toFixed(2) }}
+            </text>
+          </g>
+
+          <polyline *ngIf="pointMarkers.length > 1" [attr.points]="polylinePoints" class="chart-line"></polyline>
+          <g *ngFor="let point of pointMarkers" class="chart-point-group">
+            <circle
+              [attr.cx]="point.x"
+              [attr.cy]="point.y"
+              r="3.6"
+              class="chart-point-hitbox"
+              (mouseenter)="showPointTooltip(point)"
+              (mouseleave)="hidePointTooltip()">
+            </circle>
+            <circle [attr.cx]="point.x" [attr.cy]="point.y" r="1" class="chart-point"></circle>
+          </g>
+        </svg>
+      </div>
+
+      <div class="chart-breakdown">
+        <div class="sentiment-summary sentiment-summary--positive">
+          <div class="sentiment-summary-label">Positive</div>
+          <div class="sentiment-summary-value">{{ positivePercent }}%</div>
+          <div class="sentiment-summary-pill">{{ positivePill }}</div>
+        </div>
+
+        <div class="sentiment-summary sentiment-summary--negative">
+          <div class="sentiment-summary-label">Negative</div>
+          <div class="sentiment-summary-value">{{ negativePercent }}%</div>
+          <div class="sentiment-summary-pill">{{ negativePill }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #chartFallback>
+    <div class="chart-empty">
+      {{ loading ? 'Loading live sentiment chart...' : 'No chart points available for this interaction.' }}
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,94 @@
+<div class="word-page">
+  <section class="status-strip" *ngIf="pageMessage || pageError">
+    <div class="status-message status-message--success" *ngIf="pageMessage">{{ pageMessage }}</div>
+    <div class="status-message status-message--error" *ngIf="pageError">{{ pageError }}</div>
+  </section>
+
+  <section class="panel panel--full">
+    <div class="panel-header">
+      <div>
+        <h2>Manage Words</h2>
+        <p>Create, update, and delete entries using the Words APIs.</p>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="btn btn-secondary" routerLink="../">Back to Topics</button>
+        <button type="button" class="btn btn-secondary" routerLink="../manage-exclusion-words">Manage Exclusions</button>
+        <button type="button" class="btn btn-secondary" (click)="loadWords()" [disabled]="loading">
+          {{ loading ? 'Refreshing...' : 'Refresh Data' }}
+        </button>
+      </div>
+    </div>
+
+    <details class="filters-panel" open>
+      <summary>Filters and word tools</summary>
+
+      <div class="toolbar toolbar--library">
+        <label class="field field--wide">
+          <span>Search</span>
+          <input [(ngModel)]="searchText" placeholder="Filter by word, intent, or source" />
+        </label>
+      </div>
+
+      <div class="add-card">
+        <h3>Add Word</h3>
+        <div class="toolbar toolbar--dense">
+          <label class="field">
+            <span>Word</span>
+            <input [(ngModel)]="addForm.word" placeholder="Enter a new phrase" />
+          </label>
+          <label class="field">
+            <span>Intent</span>
+            <select [(ngModel)]="addForm.group">
+              <option value="">Select intent</option>
+              <option *ngFor="let group of groups" [value]="group">{{ group }}</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Source</span>
+            <select [(ngModel)]="addForm.source">
+              <option *ngFor="let option of sourceOptions" [value]="option">{{ option }}</option>
+            </select>
+          </label>
+          <button type="button" class="btn btn-primary" (click)="addWord()">Add Word</button>
+        </div>
+      </div>
+    </details>
+
+    <div class="word-table" *ngIf="filteredWordLibrary.length; else noWords">
+      <div class="word-table__row word-table__row--header">
+        <span>Word</span>
+        <span>Intent</span>
+        <span>Source</span>
+        <span>Actions</span>
+      </div>
+
+      <div class="word-table__row" *ngFor="let word of filteredWordLibrary; trackBy: trackWord">
+        <span class="word-text">{{ word.text || 'Unknown' }}</span>
+        <span>
+          <select [(ngModel)]="word.draftGroup">
+            <option *ngFor="let group of groups" [value]="group">{{ group }}</option>
+          </select>
+        </span>
+        <span>
+          <select [(ngModel)]="word.draftSource">
+            <option *ngFor="let option of sourceOptions" [value]="option">{{ option }}</option>
+          </select>
+        </span>
+        <span class="action-row">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="saveWord(word)" [disabled]="word.saving">
+            {{ word.saving ? 'Saving...' : 'Save' }}
+          </button>
+          <button type="button" class="btn btn-danger btn-sm" (click)="deleteWord(word)" [disabled]="word.deleting">
+            {{ word.deleting ? 'Deleting...' : 'Delete' }}
+          </button>
+        </span>
+      </div>
+    </div>
+
+    <ng-template #noWords>
+      <div class="empty-state">
+        No words matched the current search.
+      </div>
+    </ng-template>
+  </section>
+</div>

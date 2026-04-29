@@ -1,0 +1,160 @@
+{
+  "buckets": ["30m", "1h", "1d", "total"],
+  "wordGroups": [
+    "Home Voice/Technical Support",
+    "Home Voice/Appointment",
+    "Home Voice/Billing",
+    "Business Fixed/Billing",
+    "Business Fixed/Retention",
+    "Business Fixed/Technical Support",
+    "Broadband/Technical Support",
+    "Mobile/Billing",
+    "TV/Package Change",
+    "Complaints/Escalation",
+    "Orders/Provisioning"
+  ],
+  "words": [
+    { "text": "router reset", "group": "Home Voice/Technical Support", "source": "customer" },
+    { "text": "no dial tone", "group": "Home Voice/Technical Support", "source": "customer" },
+    { "text": "line crackling", "group": "Home Voice/Technical Support", "source": "customer" },
+    { "text": "missed engineer", "group": "Home Voice/Appointment", "source": "customer" },
+    { "text": "reschedule visit", "group": "Home Voice/Appointment", "source": "customer" },
+    { "text": "wrong charge", "group": "Home Voice/Billing", "source": "customer" },
+    { "text": "bill explanation", "group": "Home Voice/Billing", "source": "agent" },
+    { "text": "refund request", "group": "Business Fixed/Billing", "source": "customer" },
+    { "text": "invoice dispute", "group": "Business Fixed/Billing", "source": "customer" },
+    { "text": "contract renewal", "group": "Business Fixed/Retention", "source": "customer" },
+    { "text": "thank you for waiting", "group": "Business Fixed/Retention", "source": "agent" },
+    { "text": "static ip down", "group": "Business Fixed/Technical Support", "source": "customer" },
+    { "text": "router replacement", "group": "Business Fixed/Technical Support", "source": "agent" },
+    { "text": "slow broadband", "group": "Broadband/Technical Support", "source": "customer" },
+    { "text": "mobile overcharge", "group": "Mobile/Billing", "source": "customer" },
+    { "text": "sports package", "group": "TV/Package Change", "source": "customer" },
+    { "text": "raise complaint", "group": "Complaints/Escalation", "source": "customer" },
+    { "text": "order delayed", "group": "Orders/Provisioning", "source": "customer" }
+  ],
+  "exclusionWords": [
+    { "text": "the" },
+    { "text": "and" },
+    { "text": "okay" }
+  ],
+  "filteredWordCloudData": [
+    { "word": "router reset", "count": 2, "group": "Home Voice/Technical Support" },
+    { "word": "no dial tone", "count": 1, "group": "Home Voice/Technical Support" },
+    { "word": "line crackling", "count": 1, "group": "Home Voice/Technical Support" },
+    { "word": "missed engineer", "count": 1, "group": "Home Voice/Appointment" },
+    { "word": "reschedule visit", "count": 0, "group": "Home Voice/Appointment" },
+    { "word": "wrong charge", "count": 1, "group": "Home Voice/Billing" },
+    { "word": "bill explanation", "count": 0, "group": "Home Voice/Billing" },
+    { "word": "refund request", "count": 1, "group": "Business Fixed/Billing" },
+    { "word": "invoice dispute", "count": 1, "group": "Business Fixed/Billing" },
+    { "word": "contract renewal", "count": 1, "group": "Business Fixed/Retention" },
+    { "word": "thank you for waiting", "count": 0, "group": "Business Fixed/Retention" },
+    { "word": "static ip down", "count": 1, "group": "Business Fixed/Technical Support" },
+    { "word": "router replacement", "count": 0, "group": "Business Fixed/Technical Support" },
+    { "word": "slow broadband", "count": 0, "group": "Broadband/Technical Support" },
+    { "word": "mobile overcharge", "count": 0, "group": "Mobile/Billing" },
+    { "word": "sports package", "count": 0, "group": "TV/Package Change" },
+    { "word": "raise complaint", "count": 0, "group": "Complaints/Escalation" },
+    { "word": "order delayed", "count": 0, "group": "Orders/Provisioning" }
+  ],
+  "wordCloudData": [
+    { "word": "router reset", "count": 2, "isAgent": false, "group": "Home Voice/Technical Support" },
+    { "word": "no dial tone", "count": 1, "isAgent": false, "group": "Home Voice/Technical Support" },
+    { "word": "line crackling", "count": 1, "isAgent": false, "group": "Home Voice/Technical Support" },
+    { "word": "missed engineer", "count": 1, "isAgent": false, "group": "Home Voice/Appointment" },
+    { "word": "wrong charge", "count": 1, "isAgent": false, "group": "Home Voice/Billing" },
+    { "word": "refund request", "count": 1, "isAgent": false, "group": "Business Fixed/Billing" },
+    { "word": "invoice dispute", "count": 1, "isAgent": false, "group": "Business Fixed/Billing" },
+    { "word": "contract renewal", "count": 1, "isAgent": false, "group": "Business Fixed/Retention" },
+    { "word": "static ip down", "count": 1, "isAgent": false, "group": "Business Fixed/Technical Support" },
+    { "word": "slow broadband", "count": 0, "isAgent": false, "group": "Broadband/Technical Support" },
+    { "word": "mobile overcharge", "count": 0, "isAgent": false, "group": "Mobile/Billing" },
+    { "word": "sports package", "count": 0, "isAgent": false, "group": "TV/Package Change" },
+    { "word": "raise complaint", "count": 0, "isAgent": false, "group": "Complaints/Escalation" },
+    { "word": "order delayed", "count": 0, "isAgent": false, "group": "Orders/Provisioning" }
+  ],
+  "sessions": [
+    {
+      "sessionId": "S-10001",
+      "ucid": "UCID-700001",
+      "transcriptUrl": "/assets/config/app/dummy-transcripts/UCID-700001.txt",
+      "agentId": "AG-104",
+      "agentName": "Priya Menon",
+      "teamId": 12,
+      "skill": "Home Voice Care",
+      "source": "voice",
+      "datetime": "2026-04-29T09:15:00",
+      "transcripts": [
+        { "speaker": "customer", "transcript": "My home voice line has no dial tone and the router reset did not help.", "datetime": "2026-04-29T09:15:10" },
+        { "speaker": "agent", "transcript": "I will run a line test and check the router reset history.", "datetime": "2026-04-29T09:16:05" },
+        { "speaker": "customer", "transcript": "There is also line crackling during every call.", "datetime": "2026-04-29T09:17:12" }
+      ],
+      "detectedWords": [
+        { "word": "router reset", "count": 2, "group": "Home Voice/Technical Support" },
+        { "word": "no dial tone", "count": 1, "group": "Home Voice/Technical Support" },
+        { "word": "line crackling", "count": 1, "group": "Home Voice/Technical Support" }
+      ]
+    },
+    {
+      "sessionId": "S-10002",
+      "ucid": "UCID-700002",
+      "transcriptUrl": "/assets/config/app/dummy-transcripts/UCID-700002.txt",
+      "agentId": "AG-219",
+      "agentName": "Rahul Shah",
+      "teamId": 12,
+      "skill": "Home Voice Care",
+      "source": "voice",
+      "datetime": "2026-04-29T09:42:00",
+      "transcripts": [
+        { "speaker": "customer", "transcript": "The engineer appointment was missed and I need to reschedule.", "datetime": "2026-04-29T09:42:15" },
+        { "speaker": "agent", "transcript": "I can reschedule the visit and note the missed engineer issue.", "datetime": "2026-04-29T09:43:02" },
+        { "speaker": "customer", "transcript": "Please also check whether another router reset is required.", "datetime": "2026-04-29T09:44:18" }
+      ],
+      "detectedWords": [
+        { "word": "missed engineer", "count": 1, "group": "Home Voice/Appointment" },
+        { "word": "router reset", "count": 1, "group": "Home Voice/Technical Support" }
+      ]
+    },
+    {
+      "sessionId": "S-10003",
+      "ucid": "UCID-700003",
+      "transcriptUrl": "/assets/config/app/dummy-transcripts/UCID-700003.txt",
+      "agentId": "AG-331",
+      "agentName": "Neha Kumar",
+      "teamId": 18,
+      "skill": "Business Fixed Care",
+      "source": "voice",
+      "datetime": "2026-04-29T10:05:00",
+      "transcripts": [
+        { "speaker": "customer", "transcript": "I am calling about a refund request for a business fixed invoice dispute.", "datetime": "2026-04-29T10:05:24" },
+        { "speaker": "agent", "transcript": "I can review the invoice dispute and discuss contract renewal options.", "datetime": "2026-04-29T10:06:31" }
+      ],
+      "detectedWords": [
+        { "word": "refund request", "count": 3, "group": "Business Fixed/Billing" },
+        { "word": "invoice dispute", "count": 1, "group": "Business Fixed/Billing" },
+        { "word": "contract renewal", "count": 1, "group": "Business Fixed/Retention" }
+      ]
+    },
+    {
+      "sessionId": "S-10004",
+      "ucid": "UCID-700004",
+      "transcriptUrl": "/assets/config/app/dummy-transcripts/UCID-700004.txt",
+      "agentId": "AG-448",
+      "agentName": "Amit Rao",
+      "teamId": 22,
+      "skill": "Business Technical Support",
+      "source": "voice",
+      "datetime": "2026-04-29T10:28:00",
+      "transcripts": [
+        { "speaker": "customer", "transcript": "There is a wrong charge on my home voice bill.", "datetime": "2026-04-29T10:28:20" },
+        { "speaker": "customer", "transcript": "Our business static IP is down as well.", "datetime": "2026-04-29T10:29:40" },
+        { "speaker": "agent", "transcript": "I will raise a static IP down fault and review the wrong charge.", "datetime": "2026-04-29T10:30:12" }
+      ],
+      "detectedWords": [
+        { "word": "wrong charge", "count": 1, "group": "Home Voice/Billing" },
+        { "word": "static ip down", "count": 2, "group": "Business Fixed/Technical Support" }
+      ]
+    }
+  ]
+}
