@@ -7,18 +7,6 @@ import {
   WordIntelligenceService
 } from '../../services/word-intelligence.service';
 
-interface EditableWord extends WordEntry {
-  draftGroup: string;
-  draftSource: string;
-  saving?: boolean;
-  deleting?: boolean;
-}
-
-interface TrendingGroup {
-  key: string;
-  label: string;
-}
-
 interface ExcelIntentSample {
   key: string;
   firstLevel: string;
@@ -41,17 +29,15 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   loading = false;
   processorLoading = false;
   sessionLoading = false;
-  buckets: string[] = [];
   groups: string[] = [];
-  words: EditableWord[] = [];
+  words: WordEntry[] = [];
   filteredWords: DetectedWord[] = [];
   availableSessions: TranscriptData[] = [];
   topicSessions: TranscriptRow[] = [];
   filteredWordCount = 0;
-  selectedBucket = '';
-  selectedGroup = '';
   selectedTopicWord = '';
   searchText = '';
+  transcriptSearchText = '';
   pageMessage = '';
   pageError = '';
   readonly sourceOptions = ['customer', 'agent'];
@@ -60,20 +46,11 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   private refreshIntervalMs = 5000;
   private autoRefreshHandle: ReturnType<typeof setInterval> | null = null;
 
-  addForm = {
-    word: '',
-    group: '',
-    source: 'customer'
-  };
-
   cloudFilters = {
     source: '',
     agentId: '',
     teamId: '',
-    channel: '',
     skill: '',
-    intent: '',
-    word: '',
     fromDateTime: '',
     toDateTime: ''
   };
@@ -97,25 +74,15 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const [buckets, groups, words] = await Promise.all([
-        this.wordIntelligenceService.getBucketList(),
+      const [groups, words] = await Promise.all([
         this.wordIntelligenceService.getWordGroups(),
         this.wordIntelligenceService.getWords()
       ]);
 
-      this.buckets = buckets;
       this.groups = groups;
-      this.words = words.map((word) => this.toEditableWord(word));
+      this.words = words;
       await this.loadAvailableSessions();
       this.syncExcelSelection();
-
-      if (!this.selectedBucket) {
-        this.selectedBucket = this.buckets[0] || '';
-      }
-
-      if (!this.addForm.group && this.groups.length) {
-        this.addForm.group = this.groups[0];
-      }
 
       await this.refreshFilteredData();
     } catch (error) {
@@ -174,8 +141,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       teamId: this.cloudFilters.teamId ? Number(this.cloudFilters.teamId) : null,
       channel: null,
       skill: this.cloudFilters.skill || null,
-      intent: this.cloudFilters.intent || null,
-      word: this.cloudFilters.word || null,
+      intent: null,
+      word: null,
       fromDateTime: this.toApiDateTime(this.cloudFilters.fromDateTime),
       toDateTime: this.toApiDateTime(this.cloudFilters.toDateTime)
     });
@@ -194,13 +161,14 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     }
   }
 
-  selectTrendingGroup(group: string): void {
-    this.selectedGroup = group;
-  }
-
   selectExcelLevelOne(group: string): void {
     this.selectedExcelLevelOne = group;
     this.selectedExcelIntent = this.filteredExcelIntents[0]?.key || '';
+    this.selectedTopicWord = '';
+    this.topicSessions = [];
+  }
+
+  closeSessionDetail(): void {
     this.selectedTopicWord = '';
     this.topicSessions = [];
   }
@@ -218,16 +186,9 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     this.topicSessions = [];
   }
 
-  selectAllExcelIntents(): void {
-    this.selectedExcelIntent = '';
-    this.selectedTopicWord = '';
-    this.topicSessions = [];
-  }
-
   async applyExcelFilters(): Promise<void> {
     this.syncExcelSelection();
     await this.refreshFilteredData();
-    await this.loadSessionsForSearchKeyword();
   }
 
   clearExcelFilters(): void {
@@ -259,78 +220,6 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     }
   }
 
-  async addWord(): Promise<void> {
-    const word = this.addForm.word.trim();
-    if (!word || !this.addForm.group.trim() || !this.addForm.source.trim()) {
-      this.pageError = 'Word, group, and source are required before adding a new entry.';
-      return;
-    }
-
-    this.pageError = '';
-    const created = await this.wordIntelligenceService.addWord({
-      word,
-      group: this.addForm.group.trim(),
-      source: this.addForm.source.trim()
-    });
-
-    if (!created) {
-      this.pageError = 'Unable to add the word right now.';
-      return;
-    }
-
-    this.pageMessage = `Added "${word}" to ${this.addForm.group.trim()}.`;
-    this.addForm.word = '';
-    await this.reloadWords();
-  }
-
-  async saveWord(word: EditableWord): Promise<void> {
-    word.saving = true;
-    this.pageError = '';
-
-    try {
-      const payload = {
-        word: word.text,
-        group: word.draftGroup,
-        source: word.draftSource
-      };
-
-      if (word.group !== word.draftGroup) {
-        await this.wordIntelligenceService.updateWordGroup(payload);
-      }
-
-      if (word.source !== word.draftSource) {
-        await this.wordIntelligenceService.updateWordSource(payload);
-      }
-
-      this.pageMessage = `Saved updates for "${word.text || 'word'}".`;
-      await this.reloadWords();
-    } finally {
-      word.saving = false;
-    }
-  }
-
-  async deleteWord(word: EditableWord): Promise<void> {
-    word.deleting = true;
-    this.pageError = '';
-
-    try {
-      const response = await this.wordIntelligenceService.deleteWord({
-        word: word.text,
-        source: word.source
-      });
-
-      if (!response?.success) {
-        this.pageError = response?.message || `Unable to delete "${word.text || 'word'}".`;
-        return;
-      }
-
-      this.pageMessage = response.message || `Deleted "${word.text || 'word'}".`;
-      await this.reloadWords();
-    } finally {
-      word.deleting = false;
-    }
-  }
-
   async loadSessionsForWord(word: string | null | undefined): Promise<void> {
     const normalizedWord = (word || '').trim();
     if (!normalizedWord) {
@@ -339,8 +228,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.selectedTopicWord = normalizedWord;
     this.sessionLoading = true;
+    this.pageMessage = '';
 
     try {
       const sessions = await this.wordIntelligenceService.getSessions({
@@ -349,88 +238,38 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
         teamId: this.cloudFilters.teamId ? Number(this.cloudFilters.teamId) : null,
         channel: null,
         skill: this.cloudFilters.skill || null,
-        intent: this.cloudFilters.intent || null,
-        word: null,
+        intent: null,
+        word: normalizedWord,
         fromDateTime: this.toApiDateTime(this.cloudFilters.fromDateTime),
         toDateTime: this.toApiDateTime(this.cloudFilters.toDateTime)
       });
 
-      this.topicSessions = await this.filterSessionsByTranscriptKeyword(sessions, normalizedWord);
+      const filtered = await this.filterSessionsByTranscriptKeyword(sessions, normalizedWord);
+      
+      if (filtered.length > 0) {
+        this.selectedTopicWord = normalizedWord;
+        this.topicSessions = filtered;
+        
+        const existingWord = this.filteredWords.find(w => (w.word || '').trim().toLowerCase() === normalizedWord);
+        if (existingWord) {
+          existingWord.count = Math.max(existingWord.count || 0, filtered.length);
+        } else {
+          this.filteredWords.push({ word: normalizedWord, count: filtered.length, group: null });
+        }
+      } else {
+        this.closeSessionDetail();
+        this.pageMessage = `No conversations found for "${normalizedWord}".`;
+        setTimeout(() => {
+          if (this.pageMessage.includes(normalizedWord)) {
+            this.pageMessage = '';
+          }
+        }, 4000);
+      }
+    } catch (e) {
+      this.pageError = 'Unable to load sessions.';
     } finally {
       this.sessionLoading = false;
     }
-  }
-
-  get filteredWordLibrary(): EditableWord[] {
-    const query = this.searchText.trim().toLowerCase();
-
-    return this.words.filter((word) => {
-      const matchesQuery = !query
-        || (word.text || '').toLowerCase().includes(query)
-        || (word.group || '').toLowerCase().includes(query)
-        || (word.source || '').toLowerCase().includes(query);
-
-      return matchesQuery;
-    });
-  }
-
-  get totalTrackedWords(): number {
-    return this.words.length;
-  }
-
-  get totalCloudMentions(): number {
-    return this.filteredWords.reduce((sum, item) => sum + (item.count || 0), 0);
-  }
-
-  get dominantGroupLabel(): string {
-    if (!this.filteredWords.length) {
-      return 'No cloud data';
-    }
-
-    const groupCounts = this.filteredWords.reduce<Record<string, number>>((accumulator, item) => {
-      const key = item.group || 'ungrouped';
-      accumulator[key] = (accumulator[key] || 0) + (item.count || 0);
-      return accumulator;
-    }, {});
-
-    return Object.entries(groupCounts)
-      .sort((left, right) => right[1] - left[1])[0]?.[0] || 'No cloud data';
-  }
-
-  get trendingTopics(): DetectedWord[] {
-    return [...this.filteredWords]
-      .filter((item) => !this.selectedGroup || (item.group || '').toLowerCase() === this.selectedGroup.toLowerCase())
-      .sort((left, right) => (right.count || 0) - (left.count || 0));
-  }
-
-  get trendingGroups(): TrendingGroup[] {
-    return [
-      { key: '', label: 'All Topics' },
-      ...this.groups.map((group) => ({
-        key: group,
-        label: this.toTitleCase(group)
-      }))
-    ];
-  }
-
-  getTopicChipClass(index: number): string {
-    const classes = [
-      'topic-chip--blue',
-      'topic-chip--green',
-      'topic-chip--purple',
-      'topic-chip--indigo',
-      'topic-chip--violet'
-    ];
-
-    return classes[index % classes.length];
-  }
-
-  get activeTrendingGroupLabel(): string {
-    if (!this.selectedGroup) {
-      return 'All Topics';
-    }
-
-    return this.toTitleCase(this.selectedGroup);
   }
 
   get teamIdOptions(): string[] {
@@ -457,40 +296,36 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   }
 
   get filteredExcelIntents(): ExcelIntentSample[] {
-    return this.getExcelIntentsForLevelOne(this.selectedExcelLevelOne);
+    return this.getExcelIntentsForLevelOne(this.selectedExcelLevelOne)
+      .filter((intent) => this.getExcelIntentTotalCount(intent) > 0);
   }
 
   get selectedExcelSample(): ExcelIntentSample | undefined {
-    return this.filteredExcelIntents.find((item) => item.key === this.selectedExcelIntent)
-      ?? this.filteredExcelIntents[0];
+    if (!this.selectedExcelIntent) return undefined;
+    return this.filteredExcelIntents.find((item) => item.key === this.selectedExcelIntent);
   }
 
   get visibleKeywordChips(): string[] {
-    if (this.selectedExcelIntent) {
-      return this.selectedExcelSample ? this.getExcelKeywordChips(this.selectedExcelSample) : [];
+    if (this.selectedExcelIntent && this.selectedExcelSample) {
+      return this.getExcelKeywordChips(this.selectedExcelSample)
+        .filter((keyword) => this.getKeywordSessionCount(keyword) > 0);
     }
 
-    return [];
+    const allVisiblePhrases = this.filteredExcelIntents.flatMap(intent => intent.phrases);
+    return this.getUniqueValues(allVisiblePhrases)
+      .filter((keyword) => this.getKeywordSessionCount(keyword) > 0)
+      .sort((a, b) => this.getKeywordSessionCount(b) - this.getKeywordSessionCount(a));
   }
 
-  get selectedExcelSkillPreview(): string {
-    return this.selectedExcelSample?.phrases.join(', ') || 'No backend words mapped';
-  }
-
-  getExcelSkillPreview(intent: ExcelIntentSample): string {
-    return intent.phrases.length ? intent.phrases.join(', ') : 'No backend words mapped';
-  }
-
-  getExcelIntentPhraseCount(intent: ExcelIntentSample): number {
-    return intent.phrases.length;
+  get topKeywordChips(): string[] {
+    const allKeywords = this.getUniqueValues(this.filteredExcelWords.map((word) => word.text));
+    return allKeywords
+      .sort((left, right) => this.getKeywordSessionCount(right) - this.getKeywordSessionCount(left))
+      .slice(0, 5);
   }
 
   getExcelKeywordChips(intent: ExcelIntentSample): string[] {
     return intent.phrases;
-  }
-
-  get excelLevelOneGroups(): string[] {
-    return this.getUniqueValues(this.words.map((word) => this.getGroupLevels(word.group).firstLevel));
   }
 
   get filteredExcelLevelOneGroups(): string[] {
@@ -537,9 +372,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       .reduce((sum, item) => sum + (item.count || 0), 0);
   }
 
-  getLevelOneIcon(group: string): string {
-    const icons = ['#', '@', '$', '%', '&', '+', '*', '~'];
-    return icons[this.getStableIndex(group, icons.length)];
+  getLevelOneInitial(group: string): string {
+    return (group || '?').trim().charAt(0).toUpperCase() || '?';
   }
 
   getLevelOneIconClass(group: string): string {
@@ -548,20 +382,6 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
 
   isSelectedTopic(word: string | null | undefined): boolean {
     return (word || '') === this.selectedTopicWord;
-  }
-
-  trackWord(index: number, word: EditableWord): string {
-    return `${word.text || 'word'}-${word.source || index}`;
-  }
-
-  getSessionDetectedWords(session: TranscriptData): string {
-    return (session.detectedWords || [])
-      .map((item) => `${item.word || 'Unknown'} (${item.count})`)
-      .join(', ');
-  }
-
-  getTranscriptLink(session: TranscriptData): string {
-    return session.transcriptUrl || (session.sessionId ? `/transcripts/${encodeURIComponent(session.sessionId)}` : '');
   }
 
   async toggleTranscript(session: TranscriptRow): Promise<void> {
@@ -579,7 +399,6 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       session.transcriptLoading = false;
     }
   }
-
   private async filterSessionsByTranscriptKeyword(
     sessions: TranscriptData[],
     keyword: string
@@ -609,28 +428,15 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     );
   }
 
-  private async reloadWords(): Promise<void> {
-    const [groups, words] = await Promise.all([
-      this.wordIntelligenceService.getWordGroups(),
-      this.wordIntelligenceService.getWords()
-    ]);
-
-    this.groups = groups;
-    this.words = words.map((word) => this.toEditableWord(word));
-    this.syncExcelSelection();
-
-    if (!this.addForm.group && this.groups.length) {
-      this.addForm.group = this.groups[0];
-    }
+  highlightKeyword(text: string, keyword: string | undefined): string {
+    if (!text) return '';
+    if (!keyword) return text;
+    
+    const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedKeyword})`, 'gi');
+    return text.replace(regex, '<mark class="highlight-mark">$1</mark>');
   }
 
-  private toEditableWord(word: WordEntry): EditableWord {
-    return {
-      ...word,
-      draftGroup: word.group || '',
-      draftSource: word.source || 'customer'
-    };
-  }
 
   private syncExcelSelection(): void {
     const levelOneGroups = this.filteredExcelLevelOneGroups;
@@ -657,21 +463,14 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async loadSessionsForSearchKeyword(): Promise<void> {
-    const query = this.searchText.trim();
+  async searchTranscripts(): Promise<void> {
+    const query = this.transcriptSearchText.trim();
 
     if (!query) {
       return;
     }
 
-    const matchingKeyword = this.getUniqueValues(this.words.map((word) => word.text)).find((keyword) => {
-      const normalizedKeyword = keyword.toLowerCase();
-      const normalizedQuery = query.toLowerCase();
-
-      return normalizedKeyword === normalizedQuery || normalizedKeyword.includes(normalizedQuery);
-    });
-
-    await this.loadAllSessionsForKeyword(matchingKeyword || query);
+    await this.loadAllSessionsForKeyword(query);
   }
 
   private async loadAllSessionsForKeyword(keyword: string): Promise<void> {
@@ -681,8 +480,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.selectedTopicWord = normalizedKeyword;
     this.sessionLoading = true;
+    this.pageMessage = '';
 
     try {
       const sessions = await this.wordIntelligenceService.getSessions({
@@ -692,18 +491,40 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
         channel: null,
         skill: null,
         intent: null,
-        word: null,
+        word: normalizedKeyword,
         fromDateTime: null,
         toDateTime: null
       });
 
-      this.topicSessions = await this.filterSessionsByTranscriptKeyword(sessions, normalizedKeyword);
+      const filtered = await this.filterSessionsByTranscriptKeyword(sessions, normalizedKeyword);
+      
+      if (filtered.length > 0) {
+        this.selectedTopicWord = normalizedKeyword;
+        this.topicSessions = filtered;
+        
+        const existingWord = this.filteredWords.find(w => (w.word || '').trim().toLowerCase() === normalizedKeyword);
+        if (existingWord) {
+          existingWord.count = Math.max(existingWord.count || 0, filtered.length);
+        } else {
+          this.filteredWords.push({ word: normalizedKeyword, count: filtered.length, group: null });
+        }
+      } else {
+        this.closeSessionDetail();
+        this.pageMessage = `No conversations found for "${normalizedKeyword}".`;
+        setTimeout(() => {
+          if (this.pageMessage.includes(normalizedKeyword)) {
+            this.pageMessage = '';
+          }
+        }, 4000);
+      }
+    } catch (e) {
+      this.pageError = 'Unable to load sessions.';
     } finally {
       this.sessionLoading = false;
     }
   }
 
-  private get filteredExcelWords(): EditableWord[] {
+  private get filteredExcelWords(): WordEntry[] {
     const query = this.searchText.trim().toLowerCase();
     const selectedSource = this.cloudFilters.source.trim().toLowerCase();
 
@@ -776,14 +597,6 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       .map((value) => (value || '').trim())
       .filter(Boolean)
     )];
-  }
-
-  private toTitleCase(value: string): string {
-    return value
-      .split(/[_\s-]+/)
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
   }
 }
 

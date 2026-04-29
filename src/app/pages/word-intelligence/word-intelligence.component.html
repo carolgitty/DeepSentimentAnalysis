@@ -1,4 +1,4 @@
-﻿<div class="word-page">
+<div class="word-page">
   <section class="status-strip" *ngIf="pageMessage || pageError">
     <div class="status-message status-message--success" *ngIf="pageMessage">{{ pageMessage }}</div>
     <div class="status-message status-message--error" *ngIf="pageError">{{ pageError }}</div>
@@ -83,10 +83,29 @@
           Clear
         </button>
       </div>
+      <div class="transcript-search-section">
+        <div class="toolbar toolbar--transcript-search">
+          <label class="field field--wide">
+            <span>Search Transcripts by Keyword</span>
+            <div class="search-input-group">
+              <input
+                type="text"
+                [(ngModel)]="transcriptSearchText"
+                (keyup.enter)="searchTranscripts()"
+                placeholder="Enter keyword to search across all transcripts..." />
+              <button type="button" class="btn btn-primary" (click)="searchTranscripts()" [disabled]="sessionLoading">
+                {{ sessionLoading ? 'Searching...' : 'Search' }}
+              </button>
+            </div>
+          </label>
+        </div>
+      </div>
     </details>
 
-    <div class="hierarchy-title">
+    <div class="hierarchy-title hierarchy-title--step">
+      <span class="step-badge">1</span>
       <span>Main Intents</span>
+      <strong>Choose a main intent to explore its sub intents and keywords</strong>
     </div>
     <ng-container *ngIf="filteredExcelLevelOneGroups.length; else noExcelIntents">
       <div class="product-card-grid">
@@ -95,7 +114,7 @@
           class="product-card"
           [class.product-card--active]="!selectedExcelLevelOne"
           (click)="selectAllExcelLevelOne()">
-          <span class="product-card__icon product-card__icon--0">*</span>
+          <span class="product-card__icon product-card__icon--all">#</span>
           <strong>All Intents ({{ getAllIntentTotalCount() }})</strong>
         </button>
         <button
@@ -105,13 +124,14 @@
           [class.product-card--active]="selectedExcelLevelOne === group"
           (click)="selectExcelLevelOne(group)">
           <span class="product-card__icon" [ngClass]="getLevelOneIconClass(group)">
-            {{ getLevelOneIcon(group) }}
+            {{ getLevelOneInitial(group) }}
           </span>
           <strong>{{ group }} ({{ getExcelLevelOneTotalCount(group) }})</strong>
         </button>
       </div>
 
-      <div class="hierarchy-title">
+      <div class="hierarchy-title hierarchy-title--step hierarchy-title--sub">
+        <span class="step-badge">2</span>
         <span>Sub Intents</span>
         <strong>Groups for <em>{{ selectedExcelLevelOne || 'All Intents' }}</em></strong>
       </div>
@@ -127,21 +147,38 @@
         </button>
       </div>
 
-      <div class="hierarchy-title" *ngIf="selectedExcelIntent && selectedExcelSample as item">
+      <div class="hierarchy-title hierarchy-title--step hierarchy-title--keywords">
+        <span class="step-badge">3</span>
         <span>Keywords</span>
-        <strong>Words for <em>{{ item.intent }}</em></strong>
+        <strong>Words for <em>{{ selectedExcelSample?.intent || 'All Intents' }}</em></strong>
       </div>
-      <div class="keyword-card" *ngIf="selectedExcelIntent && selectedExcelSample">
-        <button
-          type="button"
-          class="keyword-chip"
-          *ngFor="let keyword of visibleKeywordChips"
-          [class.keyword-chip--active]="isSelectedTopic(keyword)"
-          [class.keyword-chip--has-count]="getKeywordSessionCount(keyword) > 0"
-          (click)="loadSessionsForWord(keyword)">
-          <span class="keyword-chip__dot"></span>
-          {{ keyword }} ({{ getKeywordSessionCount(keyword) }})
-        </button>
+      <div class="keyword-workspace">
+        <div class="keyword-card">
+          <button
+            type="button"
+            class="keyword-chip"
+            *ngFor="let keyword of visibleKeywordChips"
+            [class.keyword-chip--active]="isSelectedTopic(keyword)"
+            [class.keyword-chip--has-count]="getKeywordSessionCount(keyword) > 0"
+            (click)="loadSessionsForWord(keyword)">
+            <span class="keyword-chip__dot"></span>
+            {{ keyword }} ({{ getKeywordSessionCount(keyword) }})
+          </button>
+        </div>
+
+        <aside class="keyword-rail">
+          <div class="keyword-rail__card keyword-rail__card--trending">
+            <strong>Trending Keywords</strong>
+            <ol>
+              <li *ngFor="let keyword of topKeywordChips" 
+                  class="clickable-trending-item" 
+                  (click)="loadSessionsForWord(keyword)">
+                <span>{{ keyword }}</span>
+                <b>{{ getKeywordSessionCount(keyword) }}</b>
+              </li>
+            </ol>
+          </div>
+        </aside>
       </div>
 
     </ng-container>
@@ -152,60 +189,69 @@
       </div>
     </ng-template>
 
-    <div class="session-detail" *ngIf="selectedTopicWord">
-      <div class="session-detail__header">
-        <h3>Related transcripts for {{ selectedTopicWord }}</h3>
-        <p>{{ sessionLoading ? 'Loading all sessions and transcripts...' : topicSessions.length + ' matching session(s)' }}</p>
-      </div>
-
-      <div class="session-table" *ngIf="!sessionLoading && topicSessions.length; else noTopicSessions">
-        <div class="session-table__row session-table__row--header">
-          <span>UCIN</span>
-          <span>Date and time of call</span>
-          <span>Agent name</span>
-          <span>Agent ID</span>
-          <span>Transcripts</span>
+    <div class="session-modal-backdrop" *ngIf="selectedTopicWord" (click)="closeSessionDetail()"></div>
+    <div class="session-modal" *ngIf="selectedTopicWord">
+      <div class="session-modal__header">
+        <div class="session-modal__title">
+          <h3>Conversations for "{{ selectedTopicWord }}"</h3>
         </div>
+        <div class="session-modal__actions">
+          <button type="button" class="session-modal__close" (click)="closeSessionDetail()">×</button>
+        </div>
+      </div>
+      
+      <div class="session-modal__body">
+        <p class="session-modal__meta">{{ sessionLoading ? 'Loading all sessions and transcripts...' : topicSessions.length + ' matching session(s)' }}</p>
 
-        <ng-container *ngFor="let session of topicSessions">
-          <div class="session-table__row">
-            <span class="word-text">{{ session.ucid || session.sessionId || 'Unavailable' }}</span>
-            <span>{{ session.datetime ? (session.datetime | date: 'medium') : 'Time unavailable' }}</span>
-            <span>{{ session.agentName || 'Unknown' }}</span>
-            <span>{{ session.agentId || 'No ID' }}</span>
-            <span>
-              <button type="button" class="table-link table-link--button" (click)="toggleTranscript(session)">
-                {{ session.transcriptExpanded ? 'Hide transcript' : 'View transcript' }}
-              </button>
-            </span>
+        <div class="session-table" *ngIf="!sessionLoading && topicSessions.length; else noTopicSessions">
+          <div class="session-table__row session-table__row--header">
+            <span>Conversation ID</span>
+            <span>Date and time of call</span>
+            <span>Agent name</span>
+            <span>Agent ID</span>
+            <span>Transcripts</span>
           </div>
 
-          <div class="transcript-expanded" *ngIf="session.transcriptExpanded">
-            <span class="annotation-state" *ngIf="session.transcriptLoading">Loading transcript...</span>
-            <div class="transcript-expanded__list" *ngIf="!session.transcriptLoading && session.transcriptLines?.length; else noExpandedTranscript">
-              <div
-                class="transcript-expanded__line"
-                [class.transcript-expanded__line--agent]="line.speaker === 'agent'"
-                *ngFor="let line of session.transcriptLines">
-                <strong>{{ line.speaker || 'Unknown' }}</strong>
-                <p>{{ line.transcript || 'No transcript captured.' }}</p>
-                <span>{{ line.datetime ? (line.datetime | date: 'shortTime') : 'Time unavailable' }}</span>
-              </div>
+          <ng-container *ngFor="let session of topicSessions">
+            <div class="session-table__row">
+              <span class="word-text">{{ session.ucid || session.sessionId || 'Unavailable' }}</span>
+              <span>{{ session.datetime ? (session.datetime | date: 'medium') : 'Time unavailable' }}</span>
+              <span>{{ session.agentName || 'Unknown' }}</span>
+              <span>{{ session.agentId || 'No ID' }}</span>
+              <span>
+                <button type="button" class="table-link table-link--button" (click)="toggleTranscript(session)">
+                  {{ session.transcriptExpanded ? 'Hide transcript' : 'View transcript' }}
+                </button>
+              </span>
             </div>
-            <ng-template #noExpandedTranscript>
-              <div class="empty-state" *ngIf="!session.transcriptLoading">
-                No transcript lines available.
-              </div>
-            </ng-template>
-          </div>
-        </ng-container>
-      </div>
 
-      <ng-template #noTopicSessions>
-        <div class="empty-state" *ngIf="!sessionLoading">
-          No transcripts matched this keyword.
+            <div class="transcript-expanded" *ngIf="session.transcriptExpanded">
+              <span class="annotation-state" *ngIf="session.transcriptLoading">Loading transcript...</span>
+              <div class="transcript-expanded__list" *ngIf="!session.transcriptLoading && session.transcriptLines?.length; else noExpandedTranscript">
+                <div
+                  class="transcript-expanded__line"
+                  [class.transcript-expanded__line--agent]="line.speaker === 'agent'"
+                  *ngFor="let line of session.transcriptLines">
+                  <strong>{{ line.speaker || 'Unknown' }}</strong>
+                  <p [innerHTML]="highlightKeyword(line.transcript || 'No transcript captured.', selectedTopicWord)"></p>
+                  <span>{{ line.datetime ? (line.datetime | date: 'shortTime') : 'Time unavailable' }}</span>
+                </div>
+              </div>
+              <ng-template #noExpandedTranscript>
+                <div class="empty-state" *ngIf="!session.transcriptLoading">
+                  No transcript lines available.
+                </div>
+              </ng-template>
+            </div>
+          </ng-container>
         </div>
-      </ng-template>
+
+        <ng-template #noTopicSessions>
+          <div class="empty-state" *ngIf="!sessionLoading">
+            No conversations found.
+          </div>
+        </ng-template>
+      </div>
     </div>
   </section>
 </div>
