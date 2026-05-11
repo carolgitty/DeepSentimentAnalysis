@@ -487,8 +487,8 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Routes
-const sentimentRouter = require('./routes/sentiment');
-app.use('/api/sentiment', sentimentRouter);
+const sentimentRouter = require('./routes/Sentiment');
+app.use('/api/Sentiment', sentimentRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

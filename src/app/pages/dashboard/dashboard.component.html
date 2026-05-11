@@ -204,16 +204,46 @@
 
     <div class="agent-table-wrapper">
       <div class="agent-table-header">
-        <div class="header-cell header-agent">Agent name (Agent Id)</div>
-        <div class="header-cell">Ongoing</div>
-        <div class="header-cell">Status</div>
-        <div class="header-cell header-cell--last-sentiment">Last sentiment</div>
-        <div class="header-cell">Last score</div>
-        <div class="header-cell">At-risk</div>
+        <button type="button" class="header-cell header-agent sortable-header" [attr.aria-sort]="getSortAriaSort('agentName')" (click)="setSort('agentName')">
+          <span>Agent Name</span>
+          <span class="sort-indicator">{{ getSortIcon('agentName') }}</span>
+        </button>
+        <button type="button" class="header-cell sortable-header" [attr.aria-sort]="getSortAriaSort('agentId')" (click)="setSort('agentId')">
+          <span>Agent ID</span>
+          <span class="sort-indicator">{{ getSortIcon('agentId') }}</span>
+        </button>
+        <button type="button" class="header-cell sortable-header" [attr.aria-sort]="getSortAriaSort('sessionId')" (click)="setSort('sessionId')">
+          <span>Session ID</span>
+          <span class="sort-indicator">{{ getSortIcon('sessionId') }}</span>
+        </button>
+        <button type="button" class="header-cell sortable-header" [attr.aria-sort]="getSortAriaSort('status')" (click)="setSort('status')">
+          <span>Status</span>
+          <span class="sort-indicator">{{ getSortIcon('status') }}</span>
+        </button>
+        <button type="button" class="header-cell header-cell--last-sentiment sortable-header" [attr.aria-sort]="getSortAriaSort('sentiment')" (click)="setSort('sentiment')">
+          <span>Last sentiment</span>
+          <span class="sort-indicator">{{ getSortIcon('sentiment') }}</span>
+        </button>
+        <button type="button" class="header-cell sortable-header" [attr.aria-sort]="getSortAriaSort('score')" (click)="setSort('score')">
+          <span>Last score</span>
+          <span class="sort-indicator">{{ getSortIcon('score') }}</span>
+        </button>
+        <button type="button" class="header-cell sortable-header" [attr.aria-sort]="getSortAriaSort('risk')" (click)="setSort('risk')">
+          <span>At-risk</span>
+          <span class="sort-indicator">{{ getSortIcon('risk') }}</span>
+        </button>
+        <button type="button" class="header-cell header-cell--actions sortable-header" [attr.aria-sort]="getSortAriaSort('actions')" (click)="setSort('actions')">
+          <span>Actions</span>
+          <span class="sort-indicator">{{ getSortIcon('actions') }}</span>
+        </button>
+        <button type="button" class="header-cell header-cell--actions sortable-header" [attr.aria-sort]="getSortAriaSort('review')" (click)="setSort('review')">
+          <span>Review</span>
+          <span class="sort-indicator">{{ getSortIcon('review') }}</span>
+        </button>
       </div>
 
       <div class="agent-table-body">
-        <div class="agent-empty-state" *ngIf="agents.length === 0">
+        <div class="agent-empty-state" *ngIf="agentSessionRows.length === 0">
           <div class="agent-empty-illustration" aria-hidden="true">
             <svg viewBox="0 0 220 150" role="img">
               <defs>
@@ -241,95 +271,53 @@
           <h3>No sentiment data yet</h3>
           <p>Live agent sessions will appear here as soon as the monitor receives data. If you are filtering the table, try clearing the filters to see all sessions.</p>
         </div>
-        <div *ngFor="let agent of agents" class="agent-row-wrapper">
-          <button
-            type="button"
+        <div *ngFor="let row of agentSessionRows" class="agent-row-wrapper">
+          <ng-container>
+          <div
             class="agent-row"
-            [class.expanded]="expandedAgentId === agent.id"
-            (click)="toggleAgentDetails(agent)"
+            [class.expanded]="activeInteractionSessionId === row.session.sessionId"
+            role="button"
+            tabindex="0"
+            (click)="onAgentRowClick($event, row.session)"
           >
             <div class="cell cell-agent">
-              <span class="expand-icon">{{ expandedAgentId === agent.id ? 'v' : '>' }}</span>
+              <span class="expand-icon">{{ activeInteractionSessionId === row.session.sessionId ? 'v' : '>' }}</span>
               <div class="agent-info">
-                <div class="agent-name">{{ getAgentLabel(agent) }}</div>
-                <div class="agent-id">{{ agent.sessions.length }} session{{ agent.sessions.length === 1 ? '' : 's' }}</div>
+                <div class="agent-name">{{ row.agent.name }}</div>
               </div>
             </div>
             <div class="cell">
-              <span class="badge">{{ agent.ongoing }}</span>
+              <span class="agent-id">{{ row.agent.loginId }}</span>
             </div>
             <div class="cell">
-              <span class="badge" [class]="getStatusClass(agent.status)">{{ formatStatusLabel(agent.status) }}</span>
+              <span class="session-id">{{ row.session.sessionId }}</span>
             </div>
             <div class="cell">
-              <span class="sentiment-badge" [class]="'sentiment-' + getSentimentTone(agent.liveInsights.currentSentiment)">
-                {{ formatSentimentLabel(getLatestSessionSentiment(agent)) }}
+              <span class="badge" [class]="getStatusClass(row.session.status)">{{ formatStatusLabel(row.session.status) }}</span>
+            </div>
+            <div class="cell">
+              <span class="sentiment-badge" [class]="'sentiment-' + getSentimentTone(row.session.score)">
+                {{ formatSentimentLabel(row.session.sentiment) }}
               </span>
             </div>
             <div class="cell">
-              <span class="session-score">{{ formatScore(agent.liveInsights.currentSentiment) }}</span>
+              <span class="session-score">{{ formatScore(row.session.score) }}</span>
             </div>
             <div class="cell">
-              <span class="risk-badge" [class]="getRiskClass(agent.atRisk)">
-                {{ getRiskLabel(agent.atRisk) }}
+              <span class="risk-badge" [class]="getRiskClass(row.session.atRisk)">
+                {{ getRiskLabel(row.session.atRisk) }}
               </span>
             </div>
-          </button>
-
-          <div class="agent-details" *ngIf="expandedAgentId === agent.id">
-            <div class="details-content">
-              <div class="detail-section">
-                <div class="detail-header">
-                  <span class="detail-badge detail-badge--live">Live feed</span>
-                  <span class="detail-badge detail-badge--positive">{{ agent.liveInsights.currentSentiment > 0 ? 'Positive' : 'Negative' }} trend</span>
-                </div>
-
-                <div class="session-list">
-                  <div class="session-table-header">
-                    <div class="session-table-cell">Session ID</div>
-                    <div class="session-table-cell">Status</div>
-                    <div class="session-table-cell session-table-cell--sentiment">sentiment</div>
-                    <div class="session-table-cell">Score</div>
-                    <div class="session-table-cell">Risk</div>
-                    <div class="session-table-cell session-table-cell--action">Actions</div>
-                    <div class="session-table-cell session-table-cell--action">Review</div>
-                  </div>
-                  <div class="session-entry" *ngFor="let session of agent.sessions">
-                    <div class="session-item">
-                      <div
-                        class="session-main"
-                        [class.session-main--active]="activeInteractionSessionId === session.sessionId"
-                        (click)="toggleInteractionSession(session)"
-                      >
-                        <div class="session-table-cell">
-                          <span class="session-id">{{ session.sessionId }}</span>
-                        </div>
-                        <div class="session-table-cell">
-                          <span class="detail-badge" [class]="getStatusClass(session.status)">{{ formatStatusLabel(session.status) }}</span>
-                        </div>
-                        <div class="session-table-cell">
-                          <span class="sentiment-badge" [class]="'sentiment-' + getSentimentTone(session.score)">
-                            {{ formatSentimentLabel(session.sentiment) }}
-                          </span>
-                        </div>
-                        <div class="session-table-cell">
-                          <span class="session-score">{{ formatScore(session.score) }}</span>
-                        </div>
-                        <div class="session-table-cell">
-                          <span class="risk-badge" [class]="getRiskClass(session.atRisk)">
-                            {{ getRiskLabel(session.atRisk) }}
-                          </span>
-                        </div>
-                        <div class="annotation-actions session-table-cell session-table-cell--action">
-                          <div class="session-monitor-actions">
+            <div class="cell cell-actions annotation-actions">
+              <div class="session-monitor-actions" >
                             <button
                               type="button"
                               class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon"
-                              [disabled]="session.monitorActionLoading"
-                              [attr.aria-label]="getMonitorActionLabel(session, 'silent')"
-                              [title]="getMonitorActionLabel(session, 'silent')"
-                              (click)="launchSessionMonitor(session, 'silent'); $event.stopPropagation()"
-                            >
+                              [disabled]="isMonitorActionDisabled(row.session, 'silent')"
+                              [attr.aria-label]="getMonitorActionLabel(row.session, 'silent')"
+                              [title]="getMonitorActionTitle(row.session, 'silent')"
+                              (click)="performMonitorAction(row.session, 'silent'); $event.stopPropagation()"
+                              >
                               <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M1.5 8s2.3-4 6.5-4 6.5 4 6.5 4-2.3 4-6.5 4-6.5-4-6.5-4Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
                                 <circle cx="8" cy="8" r="2.1" fill="none" stroke="currentColor" stroke-width="1.4"/>
@@ -338,10 +326,10 @@
                             <button
                               type="button"
                               class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon"
-                              [disabled]="session.monitorActionLoading"
-                              [attr.aria-label]="getMonitorActionLabel(session, 'whisper')"
-                              [title]="getMonitorActionLabel(session, 'whisper')"
-                              (click)="launchSessionMonitor(session, 'whisper'); $event.stopPropagation()"
+                              [disabled]="isMonitorActionDisabled(row.session, 'whisper')"
+                              [attr.aria-label]="getMonitorActionLabel(row.session, 'whisper')"
+                              [title]="getMonitorActionTitle(row.session, 'whisper')"
+                              (click)="performMonitorAction(row.session, 'whisper'); $event.stopPropagation()"
                             >
                               <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M8 2.2a2 2 0 0 1 2 2v3.6a2 2 0 1 1-4 0V4.2a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="1.4"/>
@@ -352,50 +340,49 @@
                             <button
                               type="button"
                               class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon annotation-btn--monitor-strong"
-                              [disabled]="session.monitorActionLoading"
-                              [attr.aria-label]="getMonitorActionLabel(session, 'barge-in')"
-                              [title]="getMonitorActionLabel(session, 'barge-in')"
-                              (click)="launchSessionMonitor(session, 'barge-in'); $event.stopPropagation()"
+                              [disabled]="isMonitorActionDisabled(row.session, 'barge-in')"
+                              [attr.aria-label]="getMonitorActionLabel(row.session, 'barge-in')"
+                              [title]="getMonitorActionTitle(row.session, 'barge-in')"
+                              (click)="performMonitorAction(row.session, 'barge-in'); $event.stopPropagation()"
                             >
                               <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M8.8 1.8 4.4 8h2.8l-.6 6.2L11.6 8H8.8l0-6.2Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
                               </svg>
                             </button>
-                          </div>
-                        </div>
-                        <div class="annotation-actions session-table-cell session-table-cell--action">
-                          <span
-                            *ngIf="hasExistingReview(session)"
-                            class="annotation-badge"
-                            [class]="getAnnotationBadgeClass(session.latestAnnotationType)">
-                            <span class="annotation-badge-icon">{{ getAnnotationIcon(session.latestAnnotationType) }}</span>
-                          </span>
-                          <button
-                            type="button"
-                            class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon"
-                            aria-label="Review call"
-                            title="Review call"
-                            (click)="openAnnotationModal(agent, session); $event.stopPropagation()"
-                          >
-                            <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
-                              <path d="M5 2.5h6a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 11 13.5H5A1.5 1.5 0 0 1 3.5 12V4A1.5 1.5 0 0 1 5 2.5Z" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                              <path d="M6.2 1.8h3.6M6 6h4M6 8.5h4M6 11h2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+              </div>
+            </div>
+            <div class="cell cell-actions annotation-actions">
+              <span
+                *ngIf="hasExistingReview(row.session)"
+                class="annotation-badge"
+                [class]="getAnnotationBadgeClass(row.session.latestAnnotationType)">
+                <span class="annotation-badge-icon">{{ getAnnotationIcon(row.session.latestAnnotationType) }}</span>
+              </span>
+              <button
+                type="button"
+                class="annotation-btn annotation-btn--monitor annotation-btn--monitor-icon"
+                aria-label="Review call"
+                title="Review call"
+                (click)="openAnnotationModal(row.agent, row.session); $event.stopPropagation()"
+              >
+                <svg class="monitor-icon" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M5 2.5h6a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 11 13.5H5A1.5 1.5 0 0 1 3.5 12V4A1.5 1.5 0 0 1 5 2.5Z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                  <path d="M6.2 1.8h3.6M6 6h4M6 8.5h4M6 11h2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
 
-                    <div class="interaction-details" *ngIf="activeInteractionSessionId === session.sessionId">
-                      <div class="session-monitor-note" *ngIf="session.monitorActionError">
-                        {{ session.monitorActionError }}
+                    <div class="interaction-details" *ngIf="activeInteractionSessionId === row.session.sessionId">
+                      <div class="session-monitor-note" *ngIf="row.session.monitorActionError">
+                        {{ row.session.monitorActionError }}
                       </div>
                       <div class="interaction-grid">
                         <div class="interaction-card">
                           <h4>Live Chart</h4>
                           <customer-sentiment
-                            [timeline]="session.timeline || []"
-                            [loading]="session.timelineLoading === true"
+                            [timeline]="row.session.timeline || []"
+                            [loading]="row.session.timelineLoading === true"
                             [badThreshold]="riskThresholdBad"
                             [criticalThreshold]="riskThresholdCritical"
                           ></customer-sentiment>
@@ -409,21 +396,21 @@
                             </div>
                             <span class="transcript-live-indicator">LIVE</span>
                           </div>
-                          <div class="transcript-panel" *ngIf="session.timeline?.length; else inlineTimelineFallback">
+                          <div class="transcript-panel" *ngIf="row.session.timeline?.length; else inlineTimelineFallback">
                             <div
                               class="transcript-message"
                               [class.transcript-message--agent]="item.speaker === 'agent'"
                               [class.transcript-message--customer]="item.speaker === 'customer'"
-                              *ngFor="let item of session.timeline">
+                              *ngFor="let item of row.session.timeline">
                               <div
                                 class="transcript-avatar"
                                 [class.transcript-avatar--agent]="item.speaker === 'agent'"
                                 [class.transcript-avatar--customer]="item.speaker === 'customer'">
-                                {{ item.speaker === 'agent' ? getAgentInitials(agent.name || 'Agent').charAt(0) : 'C' }}
+                                {{ item.speaker === 'agent' ? getAgentInitials(row.agent.name || 'Agent').charAt(0) : 'C' }}
                               </div>
                               <div class="transcript-message-content">
                                 <div class="transcript-speaker">
-                                  {{ item.speaker === 'agent' ? (agent.name || 'Agent') : 'Customer' }}
+                                  {{ item.speaker === 'agent' ? (row.agent.name || 'Agent') : 'Customer' }}
                                 </div>
                                 <div class="transcript-bubble">
                                   <p class="transcript-text">{{ item.transcript || 'No transcript captured.' }}</p>
@@ -437,19 +424,14 @@
                           </div>
                           <ng-template #inlineTimelineFallback>
                             <div class="annotation-audit annotation-audit--modal">
-                              <span class="annotation-state" *ngIf="session.timelineLoading">Loading interaction timeline...</span>
-                              <span class="annotation-meta" *ngIf="!session.timelineLoading">No transcript available for this interaction.</span>
+                              <span class="annotation-state" *ngIf="row.session.timelineLoading">Loading interaction timeline...</span>
+                              <span class="annotation-meta" *ngIf="!row.session.timelineLoading">No transcript available for this interaction.</span>
                             </div>
                           </ng-template>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
+          </ng-container>
         </div>
       </div>
     </div>

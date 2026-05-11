@@ -1,13 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, interval, Subject, from } from 'rxjs';
-import { switchMap, tap, catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { AppConfigService } from './app-config.service';
 
 interface SessionFilter {
-  sessionId: string | null;
-  agentId: string | null;
-  teamId: number | null;
+  sessionId?: string | null;
+  agentId?: string | null;
+  teamId?: number | null;
 }
 
 interface Session {
@@ -25,19 +23,7 @@ interface Session {
   latestAgentSentiment: string;
   latestAgentScore: number;
   customerConsecutiveNegativeCount: number;
-  alertSuppressed: boolean;
-  suppressedBySupervisorId: string | null;
-  suppressedAt: string | null;
   lastUpdatedAt: string;
-}
-
-interface Alert {
-  alertReason: string;
-  sentiment: string;
-  transcript: string;
-  speaker: 'customer' | 'agent';
-  datetime: string;
-  score: number;
 }
 
 export interface TimelineItem {
@@ -76,9 +62,10 @@ export interface SentimentAnnotationBundle {
 export class SentimentSessionService {
   private apiBaseUrl: string = '';
   private configLoaded = false;
-  private pollingActive = false;
   private readonly defaultApiBaseUrl = 'http://localhost:5000/api';
   private useMockData = false;
+
+  //TO-DO remove on official release
   private readonly mockSessions: Session[] = [
     {
       sessionId: 'SES-1042-01',
@@ -95,9 +82,6 @@ export class SentimentSessionService {
       latestAgentSentiment: 'positive',
       latestAgentScore: 0.82,
       customerConsecutiveNegativeCount: 0,
-      alertSuppressed: false,
-      suppressedBySupervisorId: null,
-      suppressedAt: null,
       lastUpdatedAt: '2026-04-20T09:15:00.000Z'
     },
     {
@@ -115,9 +99,6 @@ export class SentimentSessionService {
       latestAgentSentiment: 'neutral',
       latestAgentScore: -0.08,
       customerConsecutiveNegativeCount: 2,
-      alertSuppressed: false,
-      suppressedBySupervisorId: null,
-      suppressedAt: null,
       lastUpdatedAt: '2026-04-20T09:18:00.000Z'
     },
     {
@@ -135,15 +116,15 @@ export class SentimentSessionService {
       latestAgentSentiment: 'positive',
       latestAgentScore: 0.18,
       customerConsecutiveNegativeCount: 1,
-      alertSuppressed: false,
-      suppressedBySupervisorId: null,
-      suppressedAt: null,
       lastUpdatedAt: '2026-04-20T09:22:00.000Z'
     }
   ];
   private readonly mockAnnotations = new Map<string, SentimentAnnotationBundle>();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private appConfigService: AppConfigService
+  ) {
     this.loadConfig();
   }
 
@@ -151,27 +132,15 @@ export class SentimentSessionService {
     if (this.configLoaded) return;
 
     try {
-      const config = await this.http.get<any>('/assets/config/app/config.json').toPromise();
+      const config = await this.appConfigService.getConfig();
       this.apiBaseUrl = this.normalizeBaseUrl(config?.api?.baseUrl);
       this.useMockData = config?.dashboard?.useDummy === true;
       this.configLoaded = true;
-      console.log('SentimentSessionService config loaded:', {
-        apiBaseUrl: this.apiBaseUrl,
-        useMockData: this.useMockData
-      });
     } catch (error) {
-      console.warn('Failed to load config from /assets/config/app/config.json, trying /config.json', error);
-      try {
-        const config = await this.http.get<any>('/config.json').toPromise();
-        this.apiBaseUrl = this.normalizeBaseUrl(config?.api?.baseUrl);
-        this.useMockData = config?.dashboard?.useDummy === true;
-        this.configLoaded = true;
-      } catch (err) {
-        console.error('Failed to load config.json, using default API URL', err);
-        this.apiBaseUrl = this.defaultApiBaseUrl;
-        this.useMockData = false;
-        this.configLoaded = true;
-      }
+      console.error('Failed to load config, using default API URL', error);
+      this.apiBaseUrl = this.defaultApiBaseUrl;
+      this.useMockData = false;
+      this.configLoaded = true;
     }
   }
 
@@ -208,23 +177,6 @@ export class SentimentSessionService {
     return this.mockSessions.find((session) => session.sessionId === sessionId) ?? null;
   }
 
-  private buildMockAlerts(session: Session): Alert[] {
-    if (session.customerConsecutiveNegativeCount <= 0) {
-      return [];
-    }
-
-    return [
-      {
-        alertReason: 'Customer sentiment dropped below threshold',
-        sentiment: session.latestCustomerSentiment,
-        transcript: `Escalation flagged for ${session.sessionId} due to repeated negative sentiment.`,
-        speaker: 'customer',
-        datetime: session.lastUpdatedAt,
-        score: session.latestCustomerScore
-      }
-    ];
-  }
-
   private buildMockTimeline(session: Session): TimelineItem[] {
     return [
       {
@@ -254,9 +206,8 @@ export class SentimentSessionService {
   }
 
   /**
-   * Load sessions with optional filters
-   * If filters are provided, uses live-search endpoint
-   * Otherwise uses ongoing sessions endpoint
+   * Load sessions with optional filters.
+   * Session and agent searches use live-search; team-scoped dashboard loads use ongoing sessions.
    */
   async loadSessions(filters?: SessionFilter): Promise<Session[]> {
     await this.loadConfig();
@@ -266,75 +217,28 @@ export class SentimentSessionService {
     }
 
     const payload = {
-      sessionId: filters?.sessionId?.trim() || null,
-      agentId: filters?.agentId?.trim() || null,
-      teamId: filters?.teamId || null
+      sessionId: filters?.sessionId?.trim() || '',
+      agentId: filters?.agentId?.trim() || '',
+      teamId: filters?.teamId ?? ''
     };
 
-    const hasExplicitFilters = Boolean(
-      payload.sessionId || payload.agentId || payload.teamId !== null
-    );
+    const hasSearchFilters = Boolean(payload.sessionId || payload.agentId);
 
-    const endpoint = hasExplicitFilters
+    const endpoint = hasSearchFilters
       ? this.buildSentimentUrl('/live-search')
       : this.buildSentimentUrl('/sessions/ongoing');
 
     try {
+      console.log('RTSA**** Loading sentiment sessions:', {
+        endpoint,
+        payload
+      });
       const response = await this.http
         .post<Session[]>(endpoint, payload)
         .toPromise();
       return Array.isArray(response) ? response : [];
     } catch (error) {
       console.error('Error loading sessions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Load detailed information for a specific session
-   */
-  async loadSessionDetails(sessionId: string): Promise<Session | null> {
-    await this.loadConfig();
-
-    if (this.useMockData) {
-      return this.getMockSession(sessionId);
-    }
-
-    const encodedId = encodeURIComponent(sessionId);
-    const endpoint = this.buildSentimentUrl(`/sessions/${encodedId}`);
-
-    try {
-      const response = await this.http
-        .post<Session>(endpoint, {})
-        .toPromise();
-      return response || null;
-    } catch (error) {
-      console.error('Error loading session details:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Load alerts for a specific session
-   */
-  async loadSessionAlerts(sessionId: string): Promise<Alert[]> {
-    await this.loadConfig();
-
-    if (this.useMockData) {
-      const session = this.getMockSession(sessionId);
-      return session ? this.buildMockAlerts(session) : [];
-    }
-
-    const encodedId = encodeURIComponent(sessionId);
-    const endpoint = this.buildSentimentUrl(`/sessions/${encodedId}/alerts`);
-
-    try {
-      const response = await this.http
-        .post<Alert[]>(endpoint, {})
-        .toPromise();
-      return Array.isArray(response) ? response : [];
-    } catch (error) {
-      console.error('Error loading alerts:', error);
       return [];
     }
   }
@@ -428,109 +332,4 @@ export class SentimentSessionService {
     }
   }
 
-  /**
-   * Load session, alerts, and timeline in parallel
-   */
-  async loadSessionWithDetails(
-    sessionId: string
-  ): Promise<{
-    session: Session | null;
-    alerts: Alert[];
-    timeline: TimelineItem[];
-  }> {
-    const [session, alerts, timeline] = await Promise.all([
-      this.loadSessionDetails(sessionId),
-      this.loadSessionAlerts(sessionId),
-      this.loadSessionTimeline(sessionId)
-    ]);
-
-    return { session, alerts, timeline };
-  }
-
-  /**
-   * Suppress alerts for a session
-   */
-  async suppressAlerts(
-    sessionId: string,
-    supervisorId: string,
-    reason: string
-  ): Promise<boolean> {
-    await this.loadConfig();
-    const encodedId = encodeURIComponent(sessionId);
-    const endpoint = this.buildSentimentUrl(`/sessions/${encodedId}/suppress-alerts`);
-
-    try {
-      await this.http
-        .post(endpoint, {
-          supervisorId,
-          reason
-        })
-        .toPromise();
-      return true;
-    } catch (error) {
-      console.error('Error suppressing alerts:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Unsuppress alerts for a session
-   */
-  async unsuppressAlerts(
-    sessionId: string,
-    supervisorId: string
-  ): Promise<boolean> {
-    await this.loadConfig();
-    const encodedId = encodeURIComponent(sessionId);
-    const endpoint = this.buildSentimentUrl(`/sessions/${encodedId}/unsuppress-alerts`);
-
-    try {
-      await this.http
-        .post(endpoint, {
-          supervisorId
-        })
-        .toPromise();
-      return true;
-    } catch (error) {
-      console.error('Error unsuppressing alerts:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Start polling for session updates
-   * Polls every 3 seconds by default
-   */
-  startPolling(
-    intervalMs: number = 3000,
-    filters?: SessionFilter
-  ): Observable<Session[]> {
-    this.pollingActive = true;
-    return interval(intervalMs).pipe(
-      switchMap(() => from(this.loadSessions(filters))),
-      tap((sessions: Session[]) => {
-        if (!this.pollingActive) {
-          this.stopPolling();
-        }
-      }),
-      catchError((error) => {
-        console.error('Polling error:', error);
-        return of([]);
-      })
-    );
-  }
-
-  /**
-   * Stop polling
-   */
-  stopPolling(): void {
-    this.pollingActive = false;
-  }
-
-  /**
-   * Check if polling is active
-   */
-  isPolling(): boolean {
-    return this.pollingActive;
-  }
 }

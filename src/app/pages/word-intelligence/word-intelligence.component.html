@@ -1,4 +1,4 @@
-<div class="word-page">
+﻿<div class="word-page">
   <section class="status-strip" *ngIf="pageMessage || pageError">
     <div class="status-message status-message--success" *ngIf="pageMessage">{{ pageMessage }}</div>
     <div class="status-message status-message--error" *ngIf="pageError">{{ pageError }}</div>
@@ -40,6 +40,24 @@
           </select>
         </label>
         <label class="field">
+          <span>Department</span>
+          <select [(ngModel)]="cloudFilters.department" (ngModelChange)="applyExcelFilters()">
+            <option value="">All departments</option>
+            <option *ngFor="let department of departmentOptions" [value]="department">{{ department }}</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Direction</span>
+          <input
+            list="directionOptions"
+            [(ngModel)]="cloudFilters.direction"
+            (ngModelChange)="applyExcelFilters()"
+            placeholder="All directions" />
+          <datalist id="directionOptions">
+            <option *ngFor="let direction of directionOptions" [value]="direction"></option>
+          </datalist>
+        </label>
+        <label class="field">
           <span>Team ID</span>
           <select [(ngModel)]="cloudFilters.teamId" (ngModelChange)="applyExcelFilters()">
             <option value="">All teams</option>
@@ -69,6 +87,8 @@
           <span>From</span>
           <input
             type="datetime-local"
+            [min]="minSessionDateTime"
+            [max]="maxSessionDateTime"
             [(ngModel)]="cloudFilters.fromDateTime"
             (ngModelChange)="applyExcelFilters()" />
         </label>
@@ -76,6 +96,8 @@
           <span>To</span>
           <input
             type="datetime-local"
+            [min]="minSessionDateTime"
+            [max]="maxSessionDateTime"
             [(ngModel)]="cloudFilters.toDateTime"
             (ngModelChange)="applyExcelFilters()" />
         </label>
@@ -104,8 +126,7 @@
 
     <div class="hierarchy-title hierarchy-title--step">
       <span class="step-badge">1</span>
-      <span>Main Intents</span>
-      <strong>Choose a main intent to explore its sub intents and keywords</strong>
+      <span>Hot Lines</span>
     </div>
     <ng-container *ngIf="filteredExcelLevelOneGroups.length; else noExcelIntents">
       <div class="product-card-grid">
@@ -115,7 +136,10 @@
           [class.product-card--active]="!selectedExcelLevelOne"
           (click)="selectAllExcelLevelOne()">
           <span class="product-card__icon product-card__icon--all">#</span>
-          <strong>All Intents ({{ getAllIntentTotalCount() }})</strong>
+          <strong class="count-label">
+            <span>All Intents</span>
+            <b class="count-pill count-pill--primary">{{ getAllIntentTotalCount() }}</b>
+          </strong>
         </button>
         <button
           type="button"
@@ -126,16 +150,29 @@
           <span class="product-card__icon" [ngClass]="getLevelOneIconClass(group)">
             {{ getLevelOneInitial(group) }}
           </span>
-          <strong>{{ group }} ({{ getExcelLevelOneTotalCount(group) }})</strong>
+          <strong class="count-label">
+            <span>{{ group }}</span>
+            <b class="count-pill">{{ getExcelLevelOneTotalCount(group) }}</b>
+          </strong>
         </button>
       </div>
 
       <div class="hierarchy-title hierarchy-title--step hierarchy-title--sub">
         <span class="step-badge">2</span>
         <span>Sub Intents</span>
-        <strong>Groups for <em>{{ selectedExcelLevelOne || 'All Intents' }}</em></strong>
       </div>
       <div class="intent-card-grid">
+        <button
+          type="button"
+          class="intent-card"
+          [class.intent-card--active]="!selectedExcelIntent"
+          (click)="selectAllExcelIntents()">
+          <span class="intent-card__icon">#</span>
+          <strong class="count-label count-label--inline">
+            <span>All Subintents</span>
+            <b class="count-pill count-pill--small">{{ getAllSubintentTotalCount() }}</b>
+          </strong>
+        </button>
         <button
           type="button"
           class="intent-card"
@@ -143,17 +180,29 @@
           [class.intent-card--active]="selectedExcelIntent === item.key"
           (click)="selectExcelIntent(item.key)">
           <span class="intent-card__icon">o</span>
-          <strong>{{ item.intent }} ({{ getExcelIntentTotalCount(item) }})</strong>
+          <strong class="count-label count-label--inline">
+            <span>{{ item.intent }}</span>
+            <b class="count-pill count-pill--small">{{ getExcelIntentTotalCount(item) }}</b>
+          </strong>
         </button>
       </div>
 
       <div class="hierarchy-title hierarchy-title--step hierarchy-title--keywords">
         <span class="step-badge">3</span>
         <span>Keywords</span>
-        <strong>Words for <em>{{ selectedExcelSample?.intent || 'All Intents' }}</em></strong>
       </div>
       <div class="keyword-workspace">
         <div class="keyword-card">
+          <button
+            type="button"
+            class="keyword-chip"
+            [class.keyword-chip--active]="!selectedTopicWord"
+            [class.keyword-chip--has-count]="getAllKeywordsTotalCount() > 0"
+            (click)="selectAllKeywords()">
+            <span class="keyword-chip__dot"></span>
+            <span class="keyword-chip__label">All Keywords</span>
+            <b class="count-pill count-pill--small">{{ getAllKeywordsTotalCount() }}</b>
+          </button>
           <button
             type="button"
             class="keyword-chip"
@@ -162,7 +211,8 @@
             [class.keyword-chip--has-count]="getKeywordSessionCount(keyword) > 0"
             (click)="loadSessionsForWord(keyword)">
             <span class="keyword-chip__dot"></span>
-            {{ keyword }} ({{ getKeywordSessionCount(keyword) }})
+            <span class="keyword-chip__label">{{ keyword }}</span>
+            <b class="count-pill count-pill--small">{{ getKeywordSessionCount(keyword) }}</b>
           </button>
         </div>
 
@@ -210,6 +260,7 @@
             <span>Agent name</span>
             <span>Agent ID</span>
             <span>Transcripts</span>
+            <span>Actions</span>
           </div>
 
           <ng-container *ngFor="let session of topicSessions">
@@ -221,6 +272,14 @@
               <span>
                 <button type="button" class="table-link table-link--button" (click)="toggleTranscript(session)">
                   {{ session.transcriptExpanded ? 'Hide transcript' : 'View transcript' }}
+                </button>
+              </span>
+              <span>
+                <button
+                  type="button"
+                  class="table-link table-link--button"
+                  [disabled]="session.monitorActionLoading">
+                  {{ session.monitorActionLoading ? 'Requesting...' : 'Barge-In' }}
                 </button>
               </span>
             </div>

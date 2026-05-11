@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { AppConfigService } from './app-config.service';
 
 export interface ApiResponse {
   success: boolean;
@@ -36,6 +37,8 @@ export interface WordCloudDataRequest {
 
 export interface TranscriptFilterRequest {
   source: string | null;
+  department?: string | null;
+  direction?: string | null;
   agentId: string | null;
   teamId: number | null;
   channel: string | null;
@@ -64,11 +67,15 @@ export interface ExclusionWordRequest {
 export interface TranscriptData {
   sessionId: string | null;
   ucid?: string | null;
+  interactionId?: string | number | null;
   transcriptUrl?: string | null;
   transcripts?: TranscriptLine[] | null;
   agentId: string | null;
   agentName: string | null;
   teamId: number;
+  tmacServerName?: string | null;
+  department?: string | null;
+  direction?: string | null;
   skill?: string | null;
   source: string | null;
   datetime: string | null;
@@ -103,7 +110,10 @@ export class WordIntelligenceService {
   private readonly defaultApiBaseUrl = 'http://localhost:5000/api';
   private readonly dummyDataUrl = '/assets/config/app/dummydata.json';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private appConfigService: AppConfigService
+  ) {}
 
   async getDashboardRefreshInterval(): Promise<number> {
     await this.loadConfig();
@@ -436,25 +446,16 @@ export class WordIntelligenceService {
     }
 
     try {
-      const config = await this.http.get<any>('/assets/config/app/config.json').toPromise();
+      const config = await this.appConfigService.getConfig();
       this.apiBaseUrl = this.normalizeBaseUrl(config?.api?.baseUrl);
       this.useMockData = config?.wordCloud?.useDummy === true;
       this.refreshIntervalMs = this.getConfiguredRefreshInterval(config);
       this.configLoaded = true;
     } catch (error) {
-      console.warn('Failed to load config from /assets/config/app/config.json, trying /config.json', error);
-      try {
-        const fallbackConfig = await this.http.get<any>('/config.json').toPromise();
-        this.apiBaseUrl = this.normalizeBaseUrl(fallbackConfig?.api?.baseUrl);
-        this.useMockData = fallbackConfig?.wordCloud?.useDummy === true;
-        this.refreshIntervalMs = this.getConfiguredRefreshInterval(fallbackConfig);
-      } catch (fallbackError) {
-        console.error('Failed to load config.json, using default API URL', fallbackError);
-        this.apiBaseUrl = this.defaultApiBaseUrl;
-        this.useMockData = false;
-      } finally {
-        this.configLoaded = true;
-      }
+      console.error('Failed to load config, using default API URL', error);
+      this.apiBaseUrl = this.defaultApiBaseUrl;
+      this.useMockData = false;
+      this.configLoaded = true;
     }
   }
 
@@ -539,6 +540,8 @@ export class WordIntelligenceService {
   private async filterDummySessions(payload: TranscriptFilterRequest): Promise<TranscriptData[]> {
     const dummyData = await this.loadDummyData();
     const sourceQuery = (payload.source || '').trim().toLowerCase();
+    const departmentQuery = (payload.department || '').trim().toLowerCase();
+    const directionQuery = (payload.direction || '').trim().toLowerCase();
     const agentIdQuery = (payload.agentId || '').trim().toLowerCase();
     const channelQuery = (payload.channel || '').trim().toLowerCase();
     const skillQuery = (payload.skill || '').trim().toLowerCase();
@@ -553,7 +556,11 @@ export class WordIntelligenceService {
       const matchesAgent = !agentIdQuery || (session.agentId || '').toLowerCase().includes(agentIdQuery);
       const matchesTeam = payload.teamId === null || session.teamId === payload.teamId;
       const matchesChannel = !channelQuery || (session.source || '').toLowerCase() === channelQuery;
+      const matchesDirection = !directionQuery || (session.direction || '').toLowerCase() === directionQuery;
       const matchesSkill = !skillQuery || (session.skill || '').toLowerCase().includes(skillQuery);
+      const matchesDepartment = !departmentQuery || (session.detectedWords || []).some((item) =>
+        this.getGroupFirstLevel(item.group).toLowerCase() === departmentQuery
+      );
       const matchesFrom = fromTime === null || sessionTime === null || sessionTime >= fromTime;
       const matchesTo = toTime === null || sessionTime === null || sessionTime <= toTime;
       const matchesIntent = !intentQuery || (session.detectedWords || []).some((item) =>
@@ -569,6 +576,8 @@ export class WordIntelligenceService {
       return matchesAgent
         && matchesTeam
         && matchesChannel
+        && matchesDirection
+        && matchesDepartment
         && matchesSkill
         && matchesFrom
         && matchesTo
@@ -585,6 +594,13 @@ export class WordIntelligenceService {
       (word.text || '').trim().toLowerCase(),
       (word.source || '').trim().toLowerCase()
     ]));
+  }
+
+  private getGroupFirstLevel(group: string | null | undefined): string {
+    return (group || '')
+      .split('/')
+      .map((part) => part.trim())
+      .filter(Boolean)[0] || '';
   }
 
   private getUniqueValues(values: Array<string | null | undefined>): string[] {

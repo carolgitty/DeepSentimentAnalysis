@@ -1,0 +1,200 @@
+<div class="config-page">
+  <section class="config-header">
+    <div>
+      <p class="eyebrow">Application Settings</p>
+      <h2>Config Manager</h2>
+      <p>Update runtime settings for this browser session.</p>
+    </div>
+    <div class="config-actions">
+      <button type="button" class="btn btn-secondary" (click)="resetToFileConfig()" [disabled]="loading || saving">
+        Reset
+      </button>
+      <button type="button" class="btn btn-primary" (click)="saveConfig()" [disabled]="!config || loading || saving">
+        {{ saving ? 'Saving...' : 'Save Config' }}
+      </button>
+      <button type="button" class="btn btn-dark" (click)="reloadApp()">
+        Reload App
+      </button>
+    </div>
+  </section>
+
+  <section class="status-strip" *ngIf="message || error">
+    <div class="status-message status-message--success" *ngIf="message">{{ message }}</div>
+    <div class="status-message status-message--error" *ngIf="error">{{ error }}</div>
+  </section>
+
+  <section class="empty-state" *ngIf="loading">
+    Loading config...
+  </section>
+
+  <form class="config-grid" *ngIf="config" (ngSubmit)="saveConfig()">
+    <section class="config-card">
+      <h3>API</h3>
+      <label class="field field--wide">
+        <span>Base URL</span>
+        <input name="apiBaseUrl" [(ngModel)]="config.api.baseUrl" />
+      </label>
+      <label class="field">
+        <span>Timeout</span>
+        <input name="apiTimeout" type="number" min="1000" step="1000" [(ngModel)]="config.api.timeout" />
+      </label>
+      <label class="field">
+        <span>Retry Attempts</span>
+        <input name="retryAttempts" type="number" min="0" [(ngModel)]="config.api.retryAttempts" />
+      </label>
+    </section>
+
+    <section class="config-card">
+      <h3>Sentiment Thresholds</h3>
+      <label class="field">
+        <span>Neutral</span>
+        <input name="neutralThreshold" type="number" step="0.01" [(ngModel)]="config.sentiment.thresholds.neutral" />
+      </label>
+      <label class="field">
+        <span>Bad</span>
+        <input name="badThreshold" type="number" step="0.01" [(ngModel)]="config.sentiment.thresholds.bad" />
+      </label>
+      <label class="field">
+        <span>Critical</span>
+        <input name="criticalThreshold" type="number" step="0.01" [(ngModel)]="config.sentiment.thresholds.critical" />
+      </label>
+      <label class="field">
+        <span>Update Interval</span>
+        <input name="sentimentUpdateInterval" type="number" min="1000" step="1000" [(ngModel)]="config.sentiment.updateInterval" />
+      </label>
+    </section>
+
+    <section class="config-card">
+      <h3>Dashboard</h3>
+      <label class="field">
+        <span>Refresh Interval</span>
+        <input name="dashboardRefreshInterval" type="number" min="1000" step="1000" [(ngModel)]="config.dashboard.refreshInterval" />
+      </label>
+      <label class="field">
+        <span>Max Agents</span>
+        <input name="maxAgents" type="number" min="1" [(ngModel)]="config.dashboard.maxAgents" />
+      </label>
+      <label class="field">
+        <span>Page Size</span>
+        <input name="pageSize" type="number" min="1" [(ngModel)]="config.dashboard.pageSize" />
+      </label>
+      <label class="toggle">
+        <input name="dashboardUseDummy" type="checkbox" [(ngModel)]="config.dashboard.useDummy" />
+        <span>Use dummy dashboard data</span>
+      </label>
+    </section>
+
+    <section class="config-card">
+      <h3>Dashboard Sections</h3>
+      <label class="toggle">
+        <input name="showMetricsSection" type="checkbox" [(ngModel)]="config.dashboard.showMetricsSection" />
+        <span>Metrics</span>
+      </label>
+      <label class="toggle">
+        <input name="alignMetricsSectionRight" type="checkbox" [(ngModel)]="config.dashboard.alignMetricsSectionRight" />
+        <span>Align metrics right</span>
+      </label>
+      <label class="toggle">
+        <input name="showAgentMonitorSection" type="checkbox" [(ngModel)]="config.dashboard.showAgentMonitorSection" />
+        <span>Agent monitor</span>
+      </label>
+      <label class="toggle">
+        <input name="showSummarySection" type="checkbox" [(ngModel)]="config.dashboard.showSummarySection" />
+        <span>Summary</span>
+      </label>
+      <label class="toggle">
+        <input name="showSentimentDistributionSection" type="checkbox" [(ngModel)]="config.dashboard.showSentimentDistributionSection" />
+        <span>Sentiment distribution</span>
+      </label>
+      <label class="toggle">
+        <input name="showQuickStatsSection" type="checkbox" [(ngModel)]="config.dashboard.showQuickStatsSection" />
+        <span>Quick stats</span>
+      </label>
+    </section>
+
+    <section class="config-card">
+      <h3>Word Intelligence</h3>
+      <label class="field">
+        <span>Refresh Interval</span>
+        <input name="wordCloudRefreshInterval" type="number" min="1000" step="1000" [(ngModel)]="config.wordCloud.refreshInterval" />
+      </label>
+      <label class="toggle">
+        <input name="wordCloudUseDummy" type="checkbox" [(ngModel)]="config.wordCloud.useDummy" />
+        <span>Use dummy word data</span>
+      </label>
+    </section>
+
+    <section class="config-card">
+      <h3>Features & Logging</h3>
+      <label class="toggle">
+        <input name="liveTracking" type="checkbox" [(ngModel)]="config.features.liveTracking" />
+        <span>Live tracking</span>
+      </label>
+      <label class="toggle">
+        <input name="analytics" type="checkbox" [(ngModel)]="config.features.analytics" />
+        <span>Analytics</span>
+      </label>
+      <label class="toggle">
+        <input name="exportData" type="checkbox" [(ngModel)]="config.features.exportData" />
+        <span>Export data</span>
+      </label>
+      <label class="field">
+        <span>Log Level</span>
+        <select name="logLevel" [(ngModel)]="config.logging.level">
+          <option value="debug">debug</option>
+          <option value="info">info</option>
+          <option value="warn">warn</option>
+          <option value="error">error</option>
+        </select>
+      </label>
+      <label class="toggle">
+        <input name="enableConsole" type="checkbox" [(ngModel)]="config.logging.enableConsole" />
+        <span>Console logging</span>
+      </label>
+      <label class="toggle">
+        <input name="enableFile" type="checkbox" [(ngModel)]="config.logging.enableFile" />
+        <span>File logging</span>
+      </label>
+    </section>
+  </form>
+
+  <section class="documentation-panel">
+    <div class="documentation-header">
+      <div>
+        <p class="eyebrow">Application Documents</p>
+        <h3>Documentation Library</h3>
+        <p>Open BRD, FRS, architecture, API, deployment, testing, and related documents from inside the app.</p>
+      </div>
+    </div>
+
+    <div class="documentation-layout">
+      <aside class="document-list" aria-label="Application document list">
+        <button
+          type="button"
+          class="document-link"
+          *ngFor="let doc of applicationDocs"
+          [class.document-link--active]="selectedDoc?.fileName === doc.fileName"
+          (click)="openDocument(doc)">
+          <span class="document-link__title">{{ doc.title }}</span>
+          <span class="document-link__description">{{ doc.description }}</span>
+        </button>
+      </aside>
+
+      <article class="document-viewer">
+        <div class="document-viewer__toolbar" *ngIf="selectedDoc">
+          <div>
+            <span class="document-viewer__label">Viewing</span>
+            <strong>{{ selectedDoc.title }}</strong>
+          </div>
+          <a class="document-raw-link" [href]="getDocumentAssetUrl(selectedDoc)" target="_blank" rel="noopener noreferrer">
+            Open Markdown
+          </a>
+        </div>
+
+        <div class="empty-state" *ngIf="docsLoading">Loading document...</div>
+        <div class="status-message status-message--error" *ngIf="docError">{{ docError }}</div>
+        <div class="document-content" *ngIf="!docsLoading && !docError" [innerHTML]="selectedDocHtml"></div>
+      </article>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,367 @@
+.config-page {
+  background: linear-gradient(180deg, #f8fffe 0%, #eef4f8 100%);
+  display: grid;
+  gap: 1rem;
+  min-height: 100%;
+  padding: 1rem;
+}
+
+.config-header,
+.config-card,
+.documentation-panel,
+.document-list,
+.document-viewer,
+.status-message,
+.empty-state {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.07);
+}
+
+.config-header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.eyebrow {
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.config-header h2,
+.config-card h3 {
+  color: #0f172a;
+  margin: 0;
+}
+
+.config-header p {
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.config-actions,
+.status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.6rem 0.85rem;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0f766e, #155e75);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background: #efe8fb;
+  color: #6b46c1;
+}
+
+.btn-dark {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.status-message {
+  font-weight: 600;
+  padding: 0.85rem 1rem;
+}
+
+.status-message--success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-message--error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.config-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
+
+.config-card {
+  align-content: flex-start;
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.field {
+  color: #334155;
+  display: grid;
+  font-size: 0.86rem;
+  gap: 0.3rem;
+}
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+.field input,
+.field select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f172a;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+  outline: none;
+}
+
+.toggle {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #0f172a;
+  display: flex;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.toggle input {
+  accent-color: #0f766e;
+}
+
+.empty-state {
+  color: #64748b;
+  padding: 1rem;
+  text-align: center;
+}
+
+.documentation-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.documentation-header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.documentation-header h3 {
+  color: #0f172a;
+  margin: 0;
+}
+
+.documentation-header p {
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.documentation-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+}
+
+.document-list {
+  align-content: flex-start;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.document-link {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #334155;
+  cursor: pointer;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem;
+  text-align: left;
+}
+
+.document-link:hover,
+.document-link--active {
+  background: #ecfdf5;
+  border-color: #0f766e;
+  color: #0f172a;
+}
+
+.document-link__title {
+  font-weight: 800;
+}
+
+.document-link__description {
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.document-viewer {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.document-viewer__toolbar {
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+}
+
+.document-viewer__label {
+  color: #64748b;
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.document-raw-link {
+  background: #0f172a;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.5rem 0.7rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.document-content {
+  color: #334155;
+  line-height: 1.6;
+  max-height: 42rem;
+  overflow: auto;
+  padding: 1rem 1.15rem 1.35rem;
+}
+
+.document-content ::ng-deep h1,
+.document-content ::ng-deep h2,
+.document-content ::ng-deep h3 {
+  color: #0f172a;
+  line-height: 1.25;
+  margin: 1rem 0 0.5rem;
+}
+
+.document-content ::ng-deep h1 {
+  font-size: 1.6rem;
+  margin-top: 0;
+}
+
+.document-content ::ng-deep h2 {
+  border-top: 1px solid #e2e8f0;
+  font-size: 1.2rem;
+  padding-top: 1rem;
+}
+
+.document-content ::ng-deep h3 {
+  font-size: 1rem;
+}
+
+.document-content ::ng-deep p,
+.document-content ::ng-deep ul {
+  margin: 0.5rem 0 0.85rem;
+}
+
+.document-content ::ng-deep li {
+  margin: 0.25rem 0;
+}
+
+.document-content ::ng-deep code {
+  background: #f1f5f9;
+  border-radius: 5px;
+  color: #0f766e;
+  font-size: 0.88em;
+  padding: 0.1rem 0.3rem;
+}
+
+.document-content ::ng-deep pre {
+  background: #0f172a;
+  border-radius: 8px;
+  color: #e2e8f0;
+  overflow: auto;
+  padding: 0.85rem;
+}
+
+.document-content ::ng-deep pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.document-content ::ng-deep a {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.document-content ::ng-deep .doc-table-wrap {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin: 0.75rem 0 1rem;
+  overflow: auto;
+}
+
+.document-content ::ng-deep table {
+  border-collapse: collapse;
+  min-width: 100%;
+}
+
+.document-content ::ng-deep th,
+.document-content ::ng-deep td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.document-content ::ng-deep th {
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  .config-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .documentation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .document-viewer__toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

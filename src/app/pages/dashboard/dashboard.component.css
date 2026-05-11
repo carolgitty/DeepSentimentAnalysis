@@ -319,7 +319,7 @@
 
 .agent-table-header {
   display: grid;
-  grid-template-columns: 2fr 0.8fr 1fr 1fr 0.9fr 0.9fr;
+  grid-template-columns: minmax(10rem, 1.35fr) minmax(7rem, 0.85fr) minmax(9rem, 1fr) minmax(7rem, 0.85fr) minmax(7.5rem, 0.9fr) minmax(5.5rem, 0.7fr) minmax(5.5rem, 0.7fr) minmax(7.5rem, 0.9fr) minmax(5.5rem, 0.6fr);
   grid-auto-rows: auto;
   background: #fafafa;
   border-bottom: 1px solid rgba(219, 228, 241, 0.9);
@@ -340,6 +340,41 @@
   min-height: 40px;
 }
 
+.sortable-header {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  gap: 0.35rem;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.sortable-header:hover,
+.sortable-header:focus-visible {
+  color: var(--accent);
+}
+
+.sortable-header:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sort-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  min-width: 1rem;
+  color: currentColor;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .header-cell--last-sentiment {
   text-transform: none;
   letter-spacing: 0.01em;
@@ -347,6 +382,10 @@
 
 .header-agent {
   flex-direction: row;
+}
+
+.header-cell--actions {
+  justify-content: flex-end;
 }
 
 .agent-table-body {
@@ -402,10 +441,10 @@
 
 .agent-row {
   display: grid;
-  grid-template-columns: 2fr 0.8fr 1fr 1fr 0.9fr 0.9fr;
+  grid-template-columns: minmax(10rem, 1.35fr) minmax(7rem, 0.85fr) minmax(9rem, 1fr) minmax(7rem, 0.85fr) minmax(7.5rem, 0.9fr) minmax(5.5rem, 0.7fr) minmax(5.5rem, 0.7fr) minmax(7.5rem, 0.9fr) minmax(5.5rem, 0.6fr);
   grid-auto-rows: minmax(60px, auto);
   padding: 0 1rem;
-  background: transparent;
+  background: #ffffff;
   border: none;
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
   cursor: pointer;
@@ -418,20 +457,34 @@
   font-family: inherit;
 }
 
+.agent-row-wrapper:nth-child(even) .agent-row {
+  background: #f8fafc;
+}
+
 .agent-row-wrapper:last-child .agent-row {
   border-bottom: none;
 }
 
 .agent-row:hover {
-  background: #fafafa;
+  background: #f1f5f9;
 }
 
 .agent-row.expanded {
-  background: #fafafa;
+  background: #eef6ff;
   border-left: 3px solid var(--accent);
-  padding: 0.35rem 0.4rem;
+  padding: 0 1rem;
   margin: 0;
   box-sizing: border-box;
+}
+
+.cell {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.cell-actions {
+  justify-content: flex-end;
 }
 
 .cell-agent {
@@ -509,7 +562,8 @@
 
 .status-offline,
 .status-logged-out,
-.status-unknown {
+.status-unknown,
+.status-to-be-updated {
   background: #e5e7eb;
   color: #4b5563;
 }
@@ -1785,6 +1839,79 @@
 
   .agent-table-wrapper {
     overflow: visible;
+  }
+
+  .agent-table-header {
+    display: none;
+  }
+
+  .agent-row {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    padding: 0.85rem;
+  }
+
+  .agent-row.expanded {
+    padding: 0.85rem;
+  }
+
+  .cell {
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .cell::before {
+    color: var(--text-muted);
+    content: '';
+    flex: 0 0 92px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .agent-row .cell:nth-child(1)::before {
+    content: 'Agent Name';
+  }
+
+  .agent-row .cell:nth-child(2)::before {
+    content: 'Agent ID';
+  }
+
+  .agent-row .cell:nth-child(3)::before {
+    content: 'Session';
+  }
+
+  .agent-row .cell:nth-child(4)::before {
+    content: 'Status';
+  }
+
+  .agent-row .cell:nth-child(5)::before {
+    content: 'Sentiment';
+  }
+
+  .agent-row .cell:nth-child(6)::before {
+    content: 'Score';
+  }
+
+  .agent-row .cell:nth-child(7)::before {
+    content: 'Risk';
+  }
+
+  .agent-row .cell:nth-child(8)::before {
+    content: 'Actions';
+  }
+
+  .agent-row .cell:nth-child(9)::before {
+    content: 'Review';
+  }
+
+  .cell-agent {
+    align-items: center;
+  }
+
+  .cell-actions {
+    justify-content: space-between;
   }
 
   .session-table-header {

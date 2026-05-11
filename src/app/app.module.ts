@@ -7,11 +7,13 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NavigationComponent } from './components/navigation.component';
+import { ConfigSettingsComponent } from './pages/config-settings/config-settings.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    NavigationComponent
+    NavigationComponent,
+    ConfigSettingsComponent
   ],
   imports: [
     BrowserModule,

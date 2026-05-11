@@ -4,7 +4,7 @@
   "description": "Text Analyzer UI Angular Application",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --port 4600",
+    "start": "ng serve --port 4600 --proxy-config proxy.conf.json",
     "build": "ng build",
     "build:prod": "ng build --configuration production --base-href=/text-analyzer-ui/",
     "watch": "ng build --watch --configuration development",

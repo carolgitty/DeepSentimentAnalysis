@@ -1,5 +1,5 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute, ParamMap } from '@angular/router';
 import {
   SentimentAnnotationBundle,
   SentimentAnnotationRecord,
@@ -8,11 +8,13 @@ import {
 } from '../../services/sentiment-session.service';
 import {
   AgentDesktopBridgeService,
+  FacCodeConfig,
   AgentDesktopSessionRef,
-  ChatMonitorMode,
-  VoiceMonitorMode
+  SupervisorInteractionActionMode
 } from '../../services/agent-desktop-bridge.service';
+import { AppConfigService } from '../../services/app-config.service';
 import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 export interface DashboardMetrics {
   totalAnalyses: number;
@@ -31,7 +33,6 @@ export interface Agent {
   loginId: string;
   teamId: number | null;
   teamName: string;
-  ongoing: number;
   avgSentiment: number;
   sentimentTrend: number[];
   atRisk: RiskLevel;
@@ -41,11 +42,6 @@ export interface Agent {
     lowestSentiment: number;
     currentSentiment: number;
   };
-  channels: {
-    name: string;
-    current: number;
-    total: number;
-  }[];
   sessions: AgentSession[];
 }
 
@@ -77,6 +73,8 @@ export interface AgentSession {
 
 type RiskLevel = 'none' | 'bad' | 'critical';
 type MetricFilter = 'total' | 'positive' | 'at-risk' | 'neutral' | null;
+type SortColumn = 'agentName' | 'agentId' | 'sessionId' | 'status' | 'sentiment' | 'score' | 'risk' | 'actions' | 'review';
+type SortDirection = 'asc' | 'desc';
 
 interface SessionAnnotationEntry {
   annotationId: string | null;
@@ -87,6 +85,12 @@ interface SessionAnnotationEntry {
   level: 'interaction' | 'segment';
   segmentId: string | null;
 }
+
+interface AgentSessionRow {
+  agent: Agent;
+  session: AgentSession;
+}
+
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
@@ -103,7 +107,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showSummarySection = true;
   showSentimentDistributionSection = true;
   showQuickStatsSection = true;
-  expandedAgentId: string | null = null;
   activeInteractionSessionId: string | null = null;
   annotationModalSession: AgentSession | null = null;
   annotationModalAgentName = '';
@@ -111,6 +114,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   annotationCommentError = '';
   teamOptions: string[] = [];
   activeMetricFilter: MetricFilter = null;
+  sortColumn: SortColumn | null = null;
+  sortDirection: SortDirection = 'asc';
+  agentSessionRows: AgentSessionRow[] = [];
   filters = {
     agentName: '',
     teamId: '',
@@ -126,16 +132,49 @@ export class DashboardComponent implements OnInit, OnDestroy {
     critical: -0.75
   };
   private destroy$ = new Subject<void>();
-  private readonly supervisorId = 'team-leader-1';
+  private supervisorId = '';
+  private supervisorTeamId: number | null = null;
+  private canUseAgentDesktopSdk = true;
+  private readonly supervisorIdParamNames = ['supervisorId', 'supervisorid', 'supervisorID', 'SupervisorId'];
+  private readonly teamIdParamNames = ['teamId', 'teamid', 'teamID', 'TeamId', 'supervisorTeamId', 'supervisorteamid', 'supervisorTeamID', 'SupervisorTeamId'];
+  private readonly facCodeParamNames: Record<SupervisorInteractionActionMode, string[]> = {
+    silent: ['silentFac', 'silentFAC', 'silentfac'],
+    whisper: ['whisperFac', 'whisperFAC', 'whisperfac'],
+    'barge-in': ['bargeInFac', 'bargeinFac', 'bargeInFAC', 'bargeinfac']
+  };
+  private readonly facSuffixParamNames: Record<SupervisorInteractionActionMode, string[]> = {
+    silent: ['silentFacSuffix', 'silentFACSuffix', 'silentfacsuffix'],
+    whisper: ['whisperFacSuffix', 'whisperFACSuffix', 'whisperfacsuffix'],
+    'barge-in': ['bargeInFacSuffix', 'bargeinFacSuffix', 'bargeInFACSuffix', 'bargeinfacsuffix']
+  };
 
   constructor(
     private sentimentSessionService: SentimentSessionService,
-    private http: HttpClient,
-    private agentDesktopBridgeService: AgentDesktopBridgeService
+    private agentDesktopBridgeService: AgentDesktopBridgeService,
+    private appConfigService: AppConfigService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadMetrics();
+    this.agentDesktopBridgeService.getAgentDataChanges()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.refreshAgentSessionRows();
+      });
+
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        this.supervisorId = this.getFirstQueryParam(params, this.supervisorIdParamNames)?.trim() || this.supervisorId;
+        this.supervisorTeamId = this.getTeamIdFromQueryParams(params);
+        this.filters.teamId = this.supervisorTeamId === null ? '' : String(this.supervisorTeamId);
+        this.agentDesktopBridgeService.setSupervisorContext({
+          supervisorId: this.supervisorId,
+          supervisorTeamId: this.supervisorTeamId,
+          facCodes: this.getFacCodesFromQueryParams(params)
+        });
+        this.loadMetrics();
+      });
   }
 
   ngOnDestroy(): void {
@@ -152,15 +191,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private async loadRealMetrics(): Promise<void> {
     try {
       await this.loadConfig();
-      const sessions = await this.sentimentSessionService.loadSessions();
+      await this.loadSupervisorContext();
+      const sessions = await this.sentimentSessionService.loadSessions({
+        teamId: this.supervisorTeamId
+      });
       this.allAgents = sessions && sessions.length > 0
         ? this.transformSessionsToAgents(sessions)
         : [];
+      await this.refreshSdkAgentStatuses();
       this.applyFilters();
     } catch (error) {
       console.error('Error loading real metrics:', error);
       this.allAgents = [];
       this.agents = [];
+      this.agentSessionRows = [];
       this.calculateMetrics(this.agents);
     } finally {
       this.loading = false;
@@ -189,18 +233,85 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
 
     try {
-      const config = await this.http.get<any>('/assets/config/app/config.json').toPromise();
+      const config = await this.appConfigService.getConfig();
       applyConfig(config);
     } catch (error) {
-      console.warn('Failed to load dashboard config from /assets/config/app/config.json, trying /config.json', error);
-      try {
-        const fallbackConfig = await this.http.get<any>('/config.json').toPromise();
-        applyConfig(fallbackConfig);
-      } catch (fallbackError) {
-        console.error('Failed to load dashboard config.json, using default risk thresholds', fallbackError);
-        this.configLoaded = true;
+      console.error('Failed to load dashboard config, using default risk thresholds', error);
+      this.configLoaded = true;
+    }
+  }
+
+  private async loadSupervisorContext(): Promise<void> {
+    if (!this.agentDesktopBridgeService.canRequestParentData()) {
+      this.canUseAgentDesktopSdk = false;
+    }
+
+    this.agentDesktopBridgeService.setSupervisorContext({
+      supervisorId: this.supervisorId,
+      supervisorTeamId: this.supervisorTeamId
+    });
+  }
+
+  private parseTeamId(value: string | number | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const teamId = Number(value);
+    return Number.isFinite(teamId) ? teamId : null;
+  }
+
+  private getFirstQueryParam(params: ParamMap, names: string[]): string | null {
+    for (const name of names) {
+      const value = params.get(name);
+      if (value !== null && value !== undefined && value !== '') {
+        return value;
       }
     }
+
+    const lowerCaseLookup = new Map(params.keys.map((key) => [key.toLowerCase(), key]));
+    for (const name of names) {
+      const matchingKey = lowerCaseLookup.get(name.toLowerCase());
+      if (!matchingKey) {
+        continue;
+      }
+
+      const value = params.get(matchingKey);
+      if (value !== null && value !== undefined && value !== '') {
+        return value;
+      }
+    }
+
+    return null;
+  }
+
+  private getTeamIdFromQueryParams(params: ParamMap): number | null {
+    return this.parseTeamId(
+      params.get('teamId') || this.getFirstQueryParam(params, this.teamIdParamNames)
+    );
+  }
+
+  private getFacCodesFromQueryParams(params: ParamMap): Partial<Record<SupervisorInteractionActionMode, FacCodeConfig>> {
+    return {
+      silent: this.getFacCodeFromQueryParams(params, 'silent'),
+      whisper: this.getFacCodeFromQueryParams(params, 'whisper'),
+      'barge-in': this.getFacCodeFromQueryParams(params, 'barge-in')
+    };
+  }
+
+  private getFacCodeFromQueryParams(
+    params: ParamMap,
+    mode: SupervisorInteractionActionMode
+  ): FacCodeConfig | undefined {
+    const code = this.getFirstQueryParam(params, this.facCodeParamNames[mode])?.trim() || '';
+    if (!code) {
+      return undefined;
+    }
+
+    return {
+      code,
+      suffix: this.getFirstQueryParam(params, this.facSuffixParamNames[mode])?.trim() || ''
+    };
   }
 
   private transformSessionsToAgents(sessions: any[]): Agent[] {
@@ -210,7 +321,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const agentId = String(session.agentId || session.agentName || `agent-${index}`);
       const agentName = this.getAgentDisplayName(session, index);
       const sessionScore = this.getSessionScore(session);
-      const sessionStatus = String(session.status || 'unknown').trim().toLowerCase() || 'unknown';
+      const sessionStatus = String(session.status || '').trim().toLowerCase() || 'to be updated';
 
       if (!agentMap.has(agentId)) {
         agentMap.set(agentId, {
@@ -219,7 +330,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
           loginId: session.agentId || `AG-${String(session.teamId || index).padStart(4, '0')}`,
           teamId: session.teamId ?? null,
           teamName: this.getTeamDisplayName(session, index),
-          ongoing: 0,
           avgSentiment: 0,
           sentimentTrend: [],
           atRisk: 'none',
@@ -229,7 +339,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
             lowestSentiment: sessionScore,
             currentSentiment: sessionScore
           },
-          channels: [],
           sessions: []
         });
       }
@@ -255,7 +364,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
 
       agent.sessions.push(agentSession);
-      agent.ongoing = agent.sessions.length;
       agent.sentimentTrend.push(sessionScore);
       agent.atRisk = this.getHighestRiskLevel([agent.atRisk, this.getRiskLevel(sessionScore)]);
     });
@@ -276,10 +384,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           peakSentiment: scores.length ? Math.max(...scores) : 0,
           lowestSentiment: scores.length ? Math.min(...scores) : 0,
           currentSentiment: latestScore
-        },
-        channels: [
-          { name: 'Sessions', current: agent.sessions.length, total: agent.sessions.length }
-        ]
+        }
       };
     });
   }
@@ -302,14 +407,125 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return agent.sessions[0]?.sentiment || 'neutral';
   }
 
+  private async refreshSdkAgentStatuses(): Promise<void> {
+    if (!this.canUseAgentDesktopSdk || !this.allAgents.length) {
+      return;
+    }
+
+    const sdkStatusByAgent = await this.getSdkStatusByAgent();
+
+    this.allAgents = this.allAgents.map((agent) => {
+      const agentStatus = this.findSdkAgentStatus(agent, sdkStatusByAgent) || agent.status || 'to be updated';
+
+      return {
+        ...agent,
+        status: agentStatus,
+        sessions: agent.sessions.map((session) => ({
+          ...session,
+          status: this.findSdkSessionStatus(agent, session, sdkStatusByAgent) || session.status || agentStatus
+        }))
+      };
+    });
+  }
+
+  private async getSdkStatusByAgent(): Promise<Map<string, string>> {
+    const statusByAgent = new Map<string, string>();
+    const lookupRequests = this.getUniqueAgentStatusRequests();
+
+    for (const request of lookupRequests) {
+      try {
+        const result = await this.agentDesktopBridgeService.getAgentStatus(request.agentId, request.tmacServer);
+        console.log('RTSA**** Agent status response from SDK client:', { request, result });
+        const status = String(result.status || '').trim();
+
+        if (!status) {
+          continue;
+        }
+
+        request.lookupKeys
+          .map((value) => this.normalizeSdkLookupKey(value))
+          .filter(Boolean)
+          .forEach((key) => statusByAgent.set(key, status));
+      } catch (error) {
+        console.warn('Unable to load agent status from SDK client.', {
+          agentId: request.agentId,
+          error
+        });
+      }
+    }
+
+    return statusByAgent;
+  }
+
+  private getUniqueAgentStatusRequests(): Array<{ agentId: string; tmacServer: string; lookupKeys: string[] }> {
+    const requests = new Map<string, { agentId: string; tmacServer: string; lookupKeys: string[] }>();
+
+    this.allAgents.forEach((agent) => {
+      const agentId = String(agent.loginId || agent.id || '').trim();
+      if (!agentId) {
+        return;
+      }
+
+      const tmacServer = String(agent.sessions.find((session) => session.tmacServerName)?.tmacServerName || '').trim();
+      const key = `${agentId.toLowerCase()}|${tmacServer.toLowerCase()}`;
+      const lookupKeys = [
+        agent.loginId,
+        agent.id,
+        agent.name,
+        ...agent.sessions.flatMap((session) => [session.agentId, session.deviceId])
+      ].map((value) => String(value || '').trim()).filter(Boolean);
+
+      requests.set(key, {
+        agentId,
+        tmacServer,
+        lookupKeys
+      });
+    });
+
+    return Array.from(requests.values());
+  }
+
+  private findSdkAgentStatus(agent: Agent, statusByAgent: Map<string, string>): string {
+    return [
+      agent.loginId,
+      agent.id,
+      agent.name,
+      ...agent.sessions.flatMap((session) => [session.agentId, session.deviceId])
+    ]
+      .map((value) => this.normalizeSdkLookupKey(value))
+      .map((key) => statusByAgent.get(key))
+      .find((status): status is string => Boolean(status)) || '';
+  }
+
+  private findSdkSessionStatus(
+    agent: Agent,
+    session: AgentSession,
+    statusByAgent: Map<string, string>
+  ): string {
+    return [
+      session.agentId,
+      session.deviceId,
+      agent.loginId,
+      agent.id,
+      agent.name
+    ]
+      .map((value) => this.normalizeSdkLookupKey(value))
+      .map((key) => statusByAgent.get(key))
+      .find((status): status is string => Boolean(status)) || '';
+  }
+
+  private normalizeSdkLookupKey(value: string | null | undefined): string {
+    return String(value || '').trim().toLowerCase();
+  }
+
   formatStatusLabel(status: string | null | undefined): string {
     const normalizedStatus = String(status || '')
       .trim()
       .replace(/[_-]+/g, ' ')
       .toLowerCase();
 
-    if (!normalizedStatus) {
-      return 'Unknown';
+    if (!normalizedStatus || normalizedStatus === 'unknown') {
+      return 'To be updated';
     }
 
     return normalizedStatus.replace(/\b\w/g, (char) => char.toUpperCase());
@@ -472,7 +688,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return {
           ...agent,
           sessions: sortedFilteredSessions,
-          ongoing: sortedFilteredSessions.length,
           avgSentiment: filteredScores.length
             ? filteredScores.reduce((sum, score) => sum + score, 0) / filteredScores.length
             : 0,
@@ -482,12 +697,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             peakSentiment: filteredScores.length ? Math.max(...filteredScores) : 0,
             lowestSentiment: filteredScores.length ? Math.min(...filteredScores) : 0,
             currentSentiment: latestScore
-          },
-          channels: agent.channels.map((channel) => ({
-            ...channel,
-            current: sortedFilteredSessions.length,
-            total: sortedFilteredSessions.length
-          }))
+          }
         };
       })
       .filter((agent) => {
@@ -524,7 +734,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return {
           ...agent,
           sessions: sortedMetricSessions,
-          ongoing: sortedMetricSessions.length,
           avgSentiment: filteredScores.length
             ? filteredScores.reduce((sum, score) => sum + score, 0) / filteredScores.length
             : 0,
@@ -534,20 +743,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
             peakSentiment: filteredScores.length ? Math.max(...filteredScores) : 0,
             lowestSentiment: filteredScores.length ? Math.min(...filteredScores) : 0,
             currentSentiment: latestScore
-          },
-          channels: agent.channels.map((channel) => ({
-            ...channel,
-            current: sortedMetricSessions.length,
-            total: sortedMetricSessions.length
-          }))
+          }
         };
       })
       .filter((agent) => !metricFilter || metricFilter === 'total' || agent.sessions.length > 0)
       .sort((left, right) => this.compareAgentDisplayPriority(left, right));
 
-    if (this.expandedAgentId && !this.agents.some((agent) => agent.id === this.expandedAgentId)) {
-      this.expandedAgentId = null;
-    }
+    this.refreshAgentSessionRows();
 
     if (this.activeInteractionSessionId) {
       const activeSession = this.agents
@@ -563,13 +765,96 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   }
 
-  async toggleAgentDetails(agent: Agent): Promise<void> {
-    this.expandedAgentId = this.expandedAgentId === agent.id ? null : agent.id;
-    this.activeInteractionSessionId = null;
-
-    if (this.expandedAgentId === agent.id) {
-      await this.loadAnnotationsForAgent(agent);
+  setSort(column: SortColumn): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
     }
+
+    this.refreshAgentSessionRows();
+  }
+
+  getSortIcon(column: SortColumn): string {
+    if (this.sortColumn !== column) {
+      return '-';
+    }
+
+    return this.sortDirection === 'asc' ? '^' : 'v';
+  }
+
+  getSortAriaSort(column: SortColumn): string {
+    if (this.sortColumn !== column) {
+      return 'none';
+    }
+
+    return this.sortDirection === 'asc' ? 'ascending' : 'descending';
+  }
+
+  private refreshAgentSessionRows(): void {
+    const rows = this.agents.flatMap((agent) =>
+      agent.sessions.map((session) => ({ agent, session }))
+    );
+
+    this.agentSessionRows = this.sortColumn
+      ? [...rows].sort((left, right) => this.compareAgentSessionRows(left, right))
+      : rows;
+  }
+
+  private compareAgentSessionRows(left: AgentSessionRow, right: AgentSessionRow): number {
+    const column = this.sortColumn;
+    if (!column) {
+      return 0;
+    }
+
+    const direction = this.sortDirection === 'asc' ? 1 : -1;
+    const result = this.compareSortValue(
+      this.getSortValue(left, column),
+      this.getSortValue(right, column)
+    );
+
+    if (result !== 0) {
+      return result * direction;
+    }
+
+    return this.compareSortValue(left.session.sessionId, right.session.sessionId);
+  }
+
+  private getSortValue(row: AgentSessionRow, column: SortColumn): string | number {
+    switch (column) {
+      case 'agentName':
+        return row.agent.name.toLowerCase();
+      case 'agentId':
+        return row.agent.loginId.toLowerCase();
+      case 'sessionId':
+        return row.session.sessionId.toLowerCase();
+      case 'status':
+        return this.formatStatusLabel(row.session.status).toLowerCase();
+      case 'sentiment':
+        return this.getSentimentPriority(row.session.sentiment, row.session.score);
+      case 'score':
+        return row.session.score;
+      case 'risk':
+        return this.getRiskPriority(row.session.atRisk);
+      case 'actions':
+        return row.session.monitorActionLoading ? 1 : 0;
+      case 'review':
+        return row.session.annotationCount ?? 0;
+      default:
+        return '';
+    }
+  }
+
+  private compareSortValue(left: string | number, right: string | number): number {
+    if (typeof left === 'number' && typeof right === 'number') {
+      return left - right;
+    }
+
+    return String(left).localeCompare(String(right), undefined, {
+      numeric: true,
+      sensitivity: 'base'
+    });
   }
 
   async toggleInteractionSession(session: AgentSession): Promise<void> {
@@ -609,34 +894,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     session.annotationSubmitting = false;
+    this.refreshAgentSessionRows();
   }
 
-  async launchSessionMonitor(session: AgentSession, mode: 'silent' | 'whisper' | 'barge-in'): Promise<void> {
-    if (session.monitorActionLoading) return;
+  onAgentRowClick(event: MouseEvent, session: AgentSession): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('button, a, input, select, textarea')) {
+      return;
+    }
 
-    session.monitorActionLoading = true;
-    session.monitorActionError = null;
+    void this.toggleInteractionSession(session);
+  }
+  
+  async performMonitorAction(session: AgentSession, mode: 'silent' | 'whisper' | 'barge-in'): Promise<void> {
+    console.log('Monitor mode: ', mode);
+
+    if (!this.isInterventionEnabled(mode, session)) {
+      session.monitorActionError = `${this.getMonitorActionLabel(session, mode)} is disabled for this supervisor.`;
+      return;
+    }
 
     try {
-      if (this.isChatSession(session)) {
-        const chatMode: ChatMonitorMode = mode === 'barge-in' ? 'conf' : mode;
-        await this.agentDesktopBridgeService.performChatBargeIn(this.toAgentDesktopSession(session), chatMode);
-      } else {
-        const voiceMode: VoiceMonitorMode = mode;
-        await this.agentDesktopBridgeService.performVoiceBargeIn(this.toAgentDesktopSession(session), voiceMode);
-      }
+      const response = await this.agentDesktopBridgeService.performInteractionAction(this.toAgentDesktopSession(session), mode);
+      console.log('RTSA**** Monitor action response:', response);
     } catch (error) {
-      session.monitorActionError = error instanceof Error ? error.message : 'Monitoring action failed.';
-      console.error(`Failed to execute ${mode} for session ${session.sessionId}`, error);
-    } finally {
-      session.monitorActionLoading = false;
+      console.error('RTSA**** Monitor action failed:', error);
     }
-  }
-
-  canLaunchSessionMonitor(session: AgentSession): boolean {
-    return this.isChatSession(session)
-      ? this.agentDesktopBridgeService.canUseChatMonitor(this.toAgentDesktopSession(session))
-      : this.agentDesktopBridgeService.canUseVoiceMonitor(this.toAgentDesktopSession(session));
   }
 
   isChatSession(session: AgentSession): boolean {
@@ -656,6 +939,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.isChatSession(session) ? 'Takeover' : 'Barge-In';
   }
 
+  isMonitorActionDisabled(session: AgentSession, mode: 'silent' | 'whisper' | 'barge-in'): boolean {
+    return Boolean(session.monitorActionLoading) || !this.isInterventionEnabled(mode, session);
+  }
+
+  getMonitorActionTitle(session: AgentSession, mode: 'silent' | 'whisper' | 'barge-in'): string {
+    const label = this.getMonitorActionLabel(session, mode);
+    return this.isInterventionEnabled(mode, session) ? label : `${label} disabled by supervisor feature permissions`;
+  }
+
+  private isInterventionEnabled(mode: 'silent' | 'whisper' | 'barge-in', _session: AgentSession): boolean {
+    return this.agentDesktopBridgeService.isInterventionFeatureEnabled(mode);
+  }
+
   private toAgentDesktopSession(session: AgentSession): AgentDesktopSessionRef {
     return {
       sessionId: session.sessionId,
@@ -665,26 +961,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       tmacServerName: session.tmacServerName ?? null,
       channel: session.channel ?? null
     };
-  }
-
-  private async loadAnnotationsForAgent(agent: Agent): Promise<void> {
-    await Promise.all(
-      agent.sessions.map(async (session) => {
-        if (session.annotationLoading || session.annotationCount !== undefined) return;
-
-        session.annotationLoading = true;
-        const bundle = await this.sentimentSessionService.loadSessionAnnotations(session.sessionId);
-
-        if (bundle) {
-          this.annotationBundleCache.set(session.sessionId, bundle);
-          this.applyAnnotationBundle(session, bundle);
-        } else if (session.annotationCount === undefined) {
-          session.annotationCount = 0;
-        }
-
-        session.annotationLoading = false;
-      })
-    );
   }
 
   private applyAnnotationBundle(session: AgentSession, bundle: SentimentAnnotationBundle): void {
@@ -779,6 +1055,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
 
       session.annotationLoading = false;
+      this.refreshAgentSessionRows();
     }
   }
 
@@ -841,13 +1118,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getStatusClass(status: string): string {
-    const normalizedStatus = String(status || 'unknown')
+    const normalizedStatus = String(status || 'to be updated')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    return `status-${normalizedStatus || 'unknown'}`;
+    return `status-${normalizedStatus && normalizedStatus !== 'unknown' ? normalizedStatus : 'to-be-updated'}`;
   }
 
   getRiskClass(riskLevel: RiskLevel): string {

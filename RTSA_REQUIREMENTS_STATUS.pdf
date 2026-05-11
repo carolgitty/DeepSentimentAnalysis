@@ -1,0 +1,340 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 2 /Kids [ 5 0 R 7 0 R ] >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 8049 >>
+stream
+0.960 0.990 0.980 rg
+0.0 0.0 612.0 792.0 re f
+0.050 0.450 0.420 rg
+0.0 704.0 612.0 88.0 re f
+0.440 0.160 0.850 rg
+0.0 704.0 180.0 88.0 re f
+0.140 0.390 0.920 rg
+180.0 704.0 180.0 88.0 re f
+1.000 1.000 1.000 rg
+BT /F2 22 Tf 1 0 0 1 44.0 750.0 Tm (RTSA Requirements Status) Tj ET
+0.920 0.970 1.000 rg
+BT /F1 10 Tf 1 0 0 1 44.0 727.0 Tm (Minimal readiness snapshot for supervisor sentiment monitoring) Tj ET
+1.000 1.000 1.000 rg
+BT /F2 10 Tf 1 0 0 1 476.0 750.0 Tm (April 2026) Tj ET
+0.880 0.980 0.950 rg
+0.820 0.880 0.900 RG
+44.0 618.0 168.7 54.0 re B
+0.050 0.620 0.350 rg
+44.0 618.0 5.0 54.0 re f
+0.080 0.110 0.180 rg
+BT /F2 15 Tf 1 0 0 1 59.0 649.0 Tm (Ready) Tj ET
+0.390 0.450 0.550 rg
+BT /F1 8.5 Tf 1 0 0 1 59.0 632.0 Tm (Core live monitor) Tj ET
+1.000 0.940 0.860 rg
+0.820 0.880 0.900 RG
+221.7 618.0 168.7 54.0 re B
+0.920 0.340 0.050 rg
+221.7 618.0 5.0 54.0 re f
+0.080 0.110 0.180 rg
+BT /F2 15 Tf 1 0 0 1 236.7 649.0 Tm (Partial) Tj ET
+0.390 0.450 0.550 rg
+BT /F1 8.5 Tf 1 0 0 1 236.7 632.0 Tm (Annotation + audit) Tj ET
+1.000 0.900 0.900 rg
+0.820 0.880 0.900 RG
+399.3 618.0 168.7 54.0 re B
+0.860 0.150 0.150 rg
+399.3 618.0 5.0 54.0 re f
+0.080 0.110 0.180 rg
+BT /F2 15 Tf 1 0 0 1 414.3 649.0 Tm (Pending) Tj ET
+0.390 0.450 0.550 rg
+BT /F1 8.5 Tf 1 0 0 1 414.3 632.0 Tm (Reports + workflow) Tj ET
+0.080 0.110 0.180 rg
+BT /F2 15 Tf 1 0 0 1 44.0 590.0 Tm (Requirement Matrix) Tj ET
+0.950 0.910 1.000 rg
+44.0 550.0 524.0 22.0 re f
+0.440 0.160 0.850 rg
+BT /F2 9 Tf 1 0 0 1 52.0 557.0 Tm (Area) Tj ET
+0.440 0.160 0.850 rg
+BT /F2 9 Tf 1 0 0 1 178.0 557.0 Tm (Status) Tj ET
+0.440 0.160 0.850 rg
+BT /F2 9 Tf 1 0 0 1 282.0 557.0 Tm (Notes) Tj ET
+1.000 1.000 1.000 rg
+0.860 0.900 0.930 RG
+44.0 512.0 524.0 38.0 re B
+0.140 0.390 0.920 rg
+44.0 512.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 535.0 Tm (Supervisor) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.5 Tf 1 0 0 1 54.0 525.0 Tm (Dashboard) Tj ET
+0.140 0.390 0.920 rg
+178.0 525.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 529.0 Tm (Mostly Ready) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 535.0 Tm (Agent list, live sentiment, score, status, at-risk) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 524.0 Tm (state, team and agent filters are available.) Tj ET
+0.980 0.990 1.000 rg
+0.860 0.900 0.930 RG
+44.0 463.0 524.0 49.0 re B
+0.140 0.390 0.920 rg
+44.0 463.0 4.0 49.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 497.0 Tm (Agent Detail View) Tj ET
+0.140 0.390 0.920 rg
+178.0 487.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 491.0 Tm (Mostly Ready) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 497.0 Tm (Session detail includes sentiment chart, transcript,) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 486.0 Tm (and monitor actions. UCID/customer info needs clearer) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 475.0 Tm (display.) Tj ET
+1.000 1.000 1.000 rg
+0.860 0.900 0.930 RG
+44.0 425.0 524.0 38.0 re B
+0.050 0.620 0.350 rg
+44.0 425.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 448.0 Tm (Monitor Actions) Tj ET
+0.050 0.620 0.350 rg
+178.0 438.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 442.0 Tm (Ready) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 448.0 Tm (Silent Monitor, Whisper, and Barge-In/Takeover are) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 437.0 Tm (wired through the TMAC bridge.) Tj ET
+0.980 0.990 1.000 rg
+0.860 0.900 0.930 RG
+44.0 387.0 524.0 38.0 re B
+0.920 0.340 0.050 rg
+44.0 387.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 410.0 Tm (TL Annotation) Tj ET
+0.920 0.340 0.050 rg
+178.0 400.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 404.0 Tm (Partially Ready) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 410.0 Tm (Call review and history exist. One-annotation-per-call) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 399.0 Tm (and real logged-in TL ID still need enforcement.) Tj ET
+1.000 1.000 1.000 rg
+0.860 0.900 0.930 RG
+44.0 349.0 524.0 38.0 re B
+0.860 0.150 0.150 rg
+44.0 349.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 372.0 Tm (Alert Handling) Tj ET
+0.860 0.150 0.150 rg
+178.0 362.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 366.0 Tm (Pending) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 372.0 Tm (Acknowledge and Dispute actions are not visible in the) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 361.0 Tm (UI yet.) Tj ET
+0.980 0.990 1.000 rg
+0.860 0.900 0.930 RG
+44.0 311.0 524.0 38.0 re B
+0.860 0.150 0.150 rg
+44.0 311.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 334.0 Tm (Pagination /) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.5 Tf 1 0 0 1 54.0 324.0 Tm (Sorting) Tj ET
+0.860 0.150 0.150 rg
+178.0 324.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 328.0 Tm (Pending) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 334.0 Tm (Agent list needs pagination and explicit At-Risk) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 323.0 Tm (sorting control.) Tj ET
+1.000 1.000 1.000 rg
+0.860 0.900 0.930 RG
+44.0 273.0 524.0 38.0 re B
+0.860 0.150 0.150 rg
+44.0 273.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 296.0 Tm (EOD Report) Tj ET
+0.860 0.150 0.150 rg
+178.0 286.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 290.0 Tm (Pending) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 296.0 Tm (Flagged UCIDs, TL actions, filters, and export are not) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 285.0 Tm (implemented as a report screen.) Tj ET
+0.980 0.990 1.000 rg
+0.860 0.900 0.930 RG
+44.0 235.0 524.0 38.0 re B
+0.860 0.150 0.150 rg
+44.0 235.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 258.0 Tm (Overall Reporting) Tj ET
+0.860 0.150 0.150 rg
+178.0 248.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 252.0 Tm (Pending) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 258.0 Tm (Power BI / OCM reporting, trends, drill-down, and) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 247.0 Tm (reporting filters are outside the current UI.) Tj ET
+1.000 1.000 1.000 rg
+0.860 0.900 0.930 RG
+44.0 197.0 524.0 38.0 re B
+0.920 0.340 0.050 rg
+44.0 197.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 220.0 Tm (Audit Trail) Tj ET
+0.920 0.340 0.050 rg
+178.0 210.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 214.0 Tm (Partially Ready) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 220.0 Tm (Annotation history stores reviewer, timestamp, ID, and) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 209.0 Tm (comment. Supervisor ID is currently hardcoded.) Tj ET
+0.980 0.990 1.000 rg
+0.860 0.900 0.930 RG
+44.0 159.0 524.0 38.0 re B
+0.440 0.160 0.850 rg
+44.0 159.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 182.0 Tm (Non-Functional) Tj ET
+0.440 0.160 0.850 rg
+178.0 172.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 176.0 Tm (Needs Validation) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 182.0 Tm (Real-time performance, security, scalability, and high) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 171.0 Tm (availability need backend/deployment confirmation.) Tj ET
+1.000 1.000 1.000 rg
+0.860 0.900 0.930 RG
+44.0 121.0 524.0 38.0 re B
+0.920 0.340 0.050 rg
+44.0 121.0 4.0 38.0 re f
+0.080 0.110 0.180 rg
+BT /F2 8.5 Tf 1 0 0 1 54.0 144.0 Tm (Enhancements) Tj ET
+0.920 0.340 0.050 rg
+178.0 134.0 88.0 15.0 re f
+1.000 1.000 1.000 rg
+BT /F2 7.2 Tf 1 0 0 1 184.0 138.0 Tm (Partially Ready) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 144.0 Tm (At-risk highlighting is available. AI confidence score,) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.3 Tf 1 0 0 1 282.0 133.0 Tm (heatmaps, and report export are pending.) Tj ET
+0.800 0.860 0.880 RG
+0.7 w 44.0 40.0 m 568.0 40.0 l S
+0.390 0.450 0.550 rg
+BT /F1 8 Tf 1 0 0 1 44.0 25.0 Tm (RTSA Requirements Status) Tj ET
+0.390 0.450 0.550 rg
+BT /F1 8 Tf 1 0 0 1 528.0 25.0 Tm (Page 1) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 2558 >>
+stream
+0.960 0.990 0.980 rg
+0.0 0.0 612.0 792.0 re f
+0.050 0.450 0.420 rg
+0.0 704.0 612.0 88.0 re f
+0.440 0.160 0.850 rg
+0.0 704.0 180.0 88.0 re f
+0.140 0.390 0.920 rg
+180.0 704.0 180.0 88.0 re f
+1.000 1.000 1.000 rg
+BT /F2 22 Tf 1 0 0 1 44.0 750.0 Tm (RTSA Requirements Status) Tj ET
+0.920 0.970 1.000 rg
+BT /F1 10 Tf 1 0 0 1 44.0 727.0 Tm (Minimal readiness snapshot for supervisor sentiment monitoring) Tj ET
+1.000 1.000 1.000 rg
+BT /F2 10 Tf 1 0 0 1 476.0 750.0 Tm (April 2026) Tj ET
+0.880 0.980 0.950 rg
+0.820 0.880 0.900 RG
+44.0 528.0 253.0 144.0 re B
+0.050 0.620 0.350 rg
+44.0 528.0 5.0 144.0 re f
+0.080 0.110 0.180 rg
+BT /F2 13 Tf 1 0 0 1 60.0 650.0 Tm (Ready Now) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 61.0 630.0 Tm (- Live Agent Sentiment Monitor) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 61.0 616.0 Tm (- Team and agent filtering) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 61.0 602.0 Tm (- At-risk highlighting) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 61.0 588.0 Tm (- Live sentiment chart) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 61.0 574.0 Tm (- Call transcript view) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 61.0 560.0 Tm (- Silent Monitor / Whisper /) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 61.0 546.0 Tm (- TL call annotation with comment) Tj ET
+1.000 0.900 0.900 rg
+0.820 0.880 0.900 RG
+315.0 500.0 253.0 172.0 re B
+0.860 0.150 0.150 rg
+315.0 500.0 5.0 172.0 re f
+0.080 0.110 0.180 rg
+BT /F2 13 Tf 1 0 0 1 331.0 650.0 Tm (Pending Items) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 630.0 Tm (- UCID and customer info display) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 616.0 Tm (- Pagination) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 602.0 Tm (- At-risk sort control) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 588.0 Tm (- Acknowledge / Dispute alert) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 574.0 Tm (- Enforce one annotation per call) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 560.0 Tm (- Replace hardcoded TL ID with) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 546.0 Tm (- EOD Summary and Intervention) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 532.0 Tm (- Export reports) Tj ET
+0.080 0.110 0.180 rg
+BT /F1 8.2 Tf 1 0 0 1 332.0 518.0 Tm (- Power BI / OCM reporting) Tj ET
+0.800 0.860 0.880 RG
+0.7 w 44.0 40.0 m 568.0 40.0 l S
+0.390 0.450 0.550 rg
+BT /F1 8 Tf 1 0 0 1 44.0 25.0 Tm (RTSA Requirements Status) Tj ET
+0.390 0.450 0.550 rg
+BT /F1 8 Tf 1 0 0 1 528.0 25.0 Tm (Page 2) Tj ET
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000129 00000 n 
+0000000226 00000 n 
+0000000328 00000 n 
+0000000464 00000 n 
+0000008565 00000 n 
+0000008701 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+11311
+%%EOF

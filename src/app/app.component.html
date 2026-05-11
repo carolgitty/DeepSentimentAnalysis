@@ -5,7 +5,10 @@
     <router-outlet></router-outlet>
   </main>
 
-  <footer class="app-footer">
-    <p>&copy; 2026 Text Analyzer UI. All rights reserved.</p>
+  <footer class="app-footer" (click)="loadTmacVersion()">
+    <p>
+      <span>&copy; 2026 Text Analyzer UI. All rights reserved.</span>
+      <span *ngIf="tmacVersion" class="footer-version">TMAC Version: {{ tmacVersion }}</span>
+    </p>
   </footer>
 </div>

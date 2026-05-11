@@ -28,6 +28,11 @@
               "src/favicon.ico",
               "src/assets",
               {
+                "glob": "**/*.md",
+                "input": "docs/application-docs",
+                "output": "/assets/docs/application-docs"
+              },
+              {
                 "glob": "config.json",
                 "input": ".",
                 "output": "/"

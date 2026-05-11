@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { ConfigSettingsComponent } from './pages/config-settings/config-settings.component';
 
 const routes: Routes = [
   {
@@ -14,6 +15,10 @@ const routes: Routes = [
   {
     path: 'word-intelligence',
     loadChildren: () => import('./pages/word-intelligence/word-intelligence.module').then(m => m.WordIntelligenceModule)
+  },
+  {
+    path: 'config',
+    component: ConfigSettingsComponent
   }
 ];
 

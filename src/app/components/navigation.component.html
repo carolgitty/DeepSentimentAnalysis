@@ -17,6 +17,12 @@
           <span class="nav-text">Word Intelligence</span>
         </button>
       </li>
+      <li class="nav-item" [class.active]="isActive('config')">
+        <button class="nav-link" (click)="navigate('config')">
+          <span class="nav-icon">CFG</span>
+          <span class="nav-text">Config</span>
+        </button>
+      </li>
     </ul>
   </div>
 </nav>

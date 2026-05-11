@@ -5,9 +5,12 @@
     "port": 4600
   },
   "api": {
-    "baseUrl": "http://localhost:5000/api/v1/sentiment/",
+    "baseUrl": "/api/v1/Sentiment/",
     "timeout": 30000,
     "retryAttempts": 3
+  },
+  "sdk": {
+    "tmacServer": "http://devlinux.tetherfi.cloud:5000"
   },
   "sentiment": {
     "thresholds": {
@@ -21,7 +24,7 @@
     "refreshInterval": 5000,
     "maxAgents": 100,
     "pageSize": 20,
-    "useDummy": false,
+    "useDummy": "false",
     "showMetricsSection": true,
     "alignMetricsSectionRight": true,
     "showAgentMonitorSection": true,

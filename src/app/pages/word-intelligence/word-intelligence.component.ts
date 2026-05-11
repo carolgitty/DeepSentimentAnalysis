@@ -18,6 +18,7 @@ interface TranscriptRow extends TranscriptData {
   transcriptLoading?: boolean;
   transcriptExpanded?: boolean;
   transcriptLines?: TranscriptLine[];
+  monitorActionLoading?: boolean;
 }
 
 @Component({
@@ -48,6 +49,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
 
   cloudFilters = {
     source: '',
+    department: '',
+    direction: '',
     agentId: '',
     teamId: '',
     skill: '',
@@ -81,7 +84,6 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
 
       this.groups = groups;
       this.words = words;
-      await this.loadAvailableSessions();
       this.syncExcelSelection();
 
       await this.refreshFilteredData();
@@ -91,20 +93,6 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     } finally {
       this.loading = false;
     }
-  }
-
-  private async loadAvailableSessions(): Promise<void> {
-    this.availableSessions = await this.wordIntelligenceService.getSessions({
-      source: null,
-      agentId: null,
-      teamId: null,
-      channel: null,
-      skill: null,
-      intent: null,
-      word: null,
-      fromDateTime: null,
-      toDateTime: null
-    });
   }
 
   private async initializeDashboard(): Promise<void> {
@@ -137,6 +125,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   async refreshFilteredData(): Promise<void> {
     const response = await this.wordIntelligenceService.getFilteredWordCloudData({
       source: this.cloudFilters.source || null,
+      department: this.cloudFilters.department || null,
+      direction: this.cloudFilters.direction || null,
       agentId: this.cloudFilters.agentId || null,
       teamId: this.cloudFilters.teamId ? Number(this.cloudFilters.teamId) : null,
       channel: null,
@@ -151,7 +141,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     this.filteredWordCount = response.reduce((sum, item) => sum + (item.count || 0), 0);
 
     if (this.selectedTopicWord) {
-      const selectedStillVisible = response.some((item) => (item.word || '') === this.selectedTopicWord);
+      const selectedTopicKey = this.normalizeKeyword(this.selectedTopicWord);
+      const selectedStillVisible = response.some((item) => this.normalizeKeyword(item.word || '') === selectedTopicKey);
       if (selectedStillVisible) {
         await this.loadSessionsForWord(this.selectedTopicWord);
       } else {
@@ -163,7 +154,7 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
 
   selectExcelLevelOne(group: string): void {
     this.selectedExcelLevelOne = group;
-    this.selectedExcelIntent = this.filteredExcelIntents[0]?.key || '';
+    this.selectedExcelIntent = '';
     this.selectedTopicWord = '';
     this.topicSessions = [];
   }
@@ -186,6 +177,17 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     this.topicSessions = [];
   }
 
+  selectAllExcelIntents(): void {
+    this.selectedExcelIntent = '';
+    this.selectedTopicWord = '';
+    this.topicSessions = [];
+  }
+
+  selectAllKeywords(): void {
+    this.selectedTopicWord = '';
+    this.topicSessions = [];
+  }
+
   async applyExcelFilters(): Promise<void> {
     this.syncExcelSelection();
     await this.refreshFilteredData();
@@ -194,6 +196,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   clearExcelFilters(): void {
     this.searchText = '';
     this.cloudFilters.source = '';
+    this.cloudFilters.department = '';
+    this.cloudFilters.direction = '';
     this.cloudFilters.agentId = '';
     this.cloudFilters.teamId = '';
     this.cloudFilters.skill = '';
@@ -234,6 +238,8 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     try {
       const sessions = await this.wordIntelligenceService.getSessions({
         source: this.cloudFilters.source || null,
+        department: this.cloudFilters.department || null,
+        direction: this.cloudFilters.direction || null,
         agentId: this.cloudFilters.agentId || null,
         teamId: this.cloudFilters.teamId ? Number(this.cloudFilters.teamId) : null,
         channel: null,
@@ -244,18 +250,13 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
         toDateTime: this.toApiDateTime(this.cloudFilters.toDateTime)
       });
 
+      this.availableSessions = sessions;
       const filtered = await this.filterSessionsByTranscriptKeyword(sessions, normalizedWord);
       
       if (filtered.length > 0) {
         this.selectedTopicWord = normalizedWord;
         this.topicSessions = filtered;
-        
-        const existingWord = this.filteredWords.find(w => (w.word || '').trim().toLowerCase() === normalizedWord);
-        if (existingWord) {
-          existingWord.count = Math.max(existingWord.count || 0, filtered.length);
-        } else {
-          this.filteredWords.push({ word: normalizedWord, count: filtered.length, group: null });
-        }
+        this.upsertDisplayedKeywordCount(normalizedWord, filtered.length);
       } else {
         this.closeSessionDetail();
         this.pageMessage = `No conversations found for "${normalizedWord}".`;
@@ -286,6 +287,42 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     return this.getUniqueValues(this.availableSessions.map((session) => session.skill)).sort();
   }
 
+  get departmentOptions(): string[] {
+    const selectedSource = this.cloudFilters.source.trim().toLowerCase();
+    const query = this.searchText.trim().toLowerCase();
+
+    return this.getUniqueValues(
+      this.words
+        .filter((word) => {
+          const source = word.source || '';
+          const group = word.group || '';
+          const text = word.text || '';
+          const levels = this.getGroupLevels(group);
+          const matchesSource = !selectedSource || source.toLowerCase() === selectedSource;
+          const matchesQuery = !query
+            || text.toLowerCase().includes(query)
+            || group.toLowerCase().includes(query)
+            || levels.firstLevel.toLowerCase().includes(query)
+            || levels.secondLevel.toLowerCase().includes(query);
+
+          return matchesSource && matchesQuery;
+        })
+        .map((word) => this.getGroupLevels(word.group).firstLevel)
+    ).sort();
+  }
+
+  get directionOptions(): string[] {
+    return this.getUniqueValues(this.availableSessions.map((session) => session.direction)).sort();
+  }
+
+  get minSessionDateTime(): string | null {
+    return this.getSessionDateTimeLimit('min');
+  }
+
+  get maxSessionDateTime(): string | null {
+    return this.getSessionDateTimeLimit('max');
+  }
+
   skillHasCount(skill: string): boolean {
     const normalizedSkill = skill.trim().toLowerCase();
 
@@ -296,8 +333,13 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   }
 
   get filteredExcelIntents(): ExcelIntentSample[] {
-    return this.getExcelIntentsForLevelOne(this.selectedExcelLevelOne)
-      .filter((intent) => this.getExcelIntentTotalCount(intent) > 0);
+    const intents = this.getExcelIntentsForLevelOne(this.selectedExcelLevelOne);
+
+    if (this.selectedExcelLevelOne) {
+      return intents;
+    }
+
+    return intents.filter((intent) => this.getExcelIntentTotalCount(intent) > 0);
   }
 
   get selectedExcelSample(): ExcelIntentSample | undefined {
@@ -308,13 +350,13 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   get visibleKeywordChips(): string[] {
     if (this.selectedExcelIntent && this.selectedExcelSample) {
       return this.getExcelKeywordChips(this.selectedExcelSample)
-        .filter((keyword) => this.getKeywordSessionCount(keyword) > 0);
+        .sort((a, b) => this.sortKeywordsByCountThenName(a, b));
     }
 
     const allVisiblePhrases = this.filteredExcelIntents.flatMap(intent => intent.phrases);
     return this.getUniqueValues(allVisiblePhrases)
-      .filter((keyword) => this.getKeywordSessionCount(keyword) > 0)
-      .sort((a, b) => this.getKeywordSessionCount(b) - this.getKeywordSessionCount(a));
+      .filter((keyword) => this.getKeywordSessionCount(keyword) >= 1)
+      .sort((a, b) => this.sortKeywordsByCountThenName(a, b));
   }
 
   get topKeywordChips(): string[] {
@@ -355,6 +397,14 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
 
   getAllIntentTotalCount(): number {
     return this.filteredExcelLevelOneGroups.reduce((sum, group) => sum + this.getExcelLevelOneTotalCount(group), 0);
+  }
+
+  getAllSubintentTotalCount(): number {
+    return this.filteredExcelIntents.reduce((sum, intent) => sum + this.getExcelIntentTotalCount(intent), 0);
+  }
+
+  getAllKeywordsTotalCount(): number {
+    return this.visibleKeywordChips.reduce((sum, keyword) => sum + this.getKeywordSessionCount(keyword), 0);
   }
 
   getExcelIntentTotalCount(intent: ExcelIntentSample): number {
@@ -399,6 +449,7 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       session.transcriptLoading = false;
     }
   }
+
   private async filterSessionsByTranscriptKeyword(
     sessions: TranscriptData[],
     keyword: string
@@ -459,7 +510,7 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     }
 
     if (this.selectedExcelIntent && !intents.some((item) => item.key === this.selectedExcelIntent)) {
-      this.selectedExcelIntent = intents[0]?.key || '';
+      this.selectedExcelIntent = '';
     }
   }
 
@@ -485,29 +536,26 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
 
     try {
       const sessions = await this.wordIntelligenceService.getSessions({
-        source: null,
-        agentId: null,
-        teamId: null,
+        source: this.cloudFilters.source || null,
+        department: this.cloudFilters.department || null,
+        direction: this.cloudFilters.direction || null,
+        agentId: this.cloudFilters.agentId || null,
+        teamId: this.cloudFilters.teamId ? Number(this.cloudFilters.teamId) : null,
         channel: null,
-        skill: null,
+        skill: this.cloudFilters.skill || null,
         intent: null,
-        word: normalizedKeyword,
-        fromDateTime: null,
-        toDateTime: null
+        word: null,
+        fromDateTime: this.toApiDateTime(this.cloudFilters.fromDateTime),
+        toDateTime: this.toApiDateTime(this.cloudFilters.toDateTime)
       });
 
+      this.availableSessions = sessions;
       const filtered = await this.filterSessionsByTranscriptKeyword(sessions, normalizedKeyword);
       
       if (filtered.length > 0) {
         this.selectedTopicWord = normalizedKeyword;
         this.topicSessions = filtered;
-        
-        const existingWord = this.filteredWords.find(w => (w.word || '').trim().toLowerCase() === normalizedKeyword);
-        if (existingWord) {
-          existingWord.count = Math.max(existingWord.count || 0, filtered.length);
-        } else {
-          this.filteredWords.push({ word: normalizedKeyword, count: filtered.length, group: null });
-        }
+        this.upsertDisplayedKeywordCount(normalizedKeyword, filtered.length);
       } else {
         this.closeSessionDetail();
         this.pageMessage = `No conversations found for "${normalizedKeyword}".`;
@@ -527,6 +575,7 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
   private get filteredExcelWords(): WordEntry[] {
     const query = this.searchText.trim().toLowerCase();
     const selectedSource = this.cloudFilters.source.trim().toLowerCase();
+    const selectedDepartment = this.cloudFilters.department.trim().toLowerCase();
 
     return this.words.filter((word) => {
       const group = word.group || '';
@@ -534,14 +583,39 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
       const source = word.source || '';
       const levels = this.getGroupLevels(group);
       const matchesSource = !selectedSource || source.toLowerCase() === selectedSource;
+      const matchesDepartment = !selectedDepartment || levels.firstLevel.toLowerCase() === selectedDepartment;
       const matchesQuery = !query
         || text.toLowerCase().includes(query)
         || group.toLowerCase().includes(query)
         || levels.firstLevel.toLowerCase().includes(query)
         || levels.secondLevel.toLowerCase().includes(query);
 
-      return matchesSource && matchesQuery;
+      return matchesSource && matchesDepartment && matchesQuery;
     });
+  }
+
+  private upsertDisplayedKeywordCount(keyword: string, count: number): void {
+    const keywordKey = this.normalizeKeyword(keyword);
+    if (!keywordKey) {
+      return;
+    }
+
+    const existingWord = this.filteredWords.find((word) => this.normalizeKeyword(word.word || '') === keywordKey);
+    if (existingWord) {
+      existingWord.count = Math.max(existingWord.count || 0, count);
+      return;
+    }
+
+    this.filteredWords.push({ word: keyword, count, group: null });
+  }
+
+  private normalizeKeyword(keyword: string): string {
+    return keyword.trim().toLowerCase();
+  }
+
+  private sortKeywordsByCountThenName(left: string, right: string): number {
+    const countDifference = this.getKeywordSessionCount(right) - this.getKeywordSessionCount(left);
+    return countDifference || left.localeCompare(right);
   }
 
   private getExcelIntentsForLevelOne(group: string): ExcelIntentSample[] {
@@ -584,6 +658,29 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     return Number.isNaN(date.getTime()) ? null : date.toISOString();
   }
 
+  private getSessionDateTimeLimit(mode: 'min' | 'max'): string | null {
+    const times = this.availableSessions
+      .map((session) => session.datetime ? new Date(session.datetime).getTime() : NaN)
+      .filter((time) => !Number.isNaN(time));
+
+    if (!times.length) {
+      return null;
+    }
+
+    const limit = mode === 'min' ? Math.min(...times) : Math.max(...times);
+    return this.toDateTimeLocalValue(new Date(limit));
+  }
+
+  private toDateTimeLocalValue(date: Date): string {
+    const pad = (value: number): string => String(value).padStart(2, '0');
+
+    return [
+      date.getFullYear(),
+      pad(date.getMonth() + 1),
+      pad(date.getDate())
+    ].join('-') + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
   private getStableIndex(value: string, length: number): number {
     const total = value
       .split('')
@@ -599,4 +696,3 @@ export class WordIntelligenceComponent implements OnInit, OnDestroy {
     )];
   }
 }
-

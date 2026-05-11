@@ -21,6 +21,14 @@
 .app-footer p {
   margin: 0;
   font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+}
+
+.footer-version {
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
